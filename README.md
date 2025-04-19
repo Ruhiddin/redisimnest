@@ -71,13 +71,13 @@ run(main())
 
 ## Features
 
-- Prefix-Based Cluster Management: Organize Redis keys with flexible, dynamic prefixes.
-- Support for Parameterized Keys: Create keys with placeholders that can be dynamically replaced.
-- TTL Management: Automatic and manual control over key TTLs.
-- Cluster Hierarchies: Nested clusters with inherited parameters.
-- Typed Key Classes: Use Python types to define and validate Redis key value structures.
-- Auto-Binding & Dynamic Access: Smart access to nested clusters and runtime bindings.
-- Command Dispatching: Type-aware command routing with serialization/deserialization support.
+- Prefix-Based Cluster Management: _Organize Redis keys with flexible, dynamic prefixes._
+- Support for Parameterized Keys:_ Create keys with placeholders that can be dynamically replaced._
+- TTL Management: _Automatic and manual control over key TTLs._
+- Cluster Hierarchies: _Nested clusters with inherited parameters._
+- Typed Key Classes: _Use Python types to define and validate Redis key value structures._
+- Auto-Binding & Dynamic Access:_ Smart access to nested clusters and runtime bindings._
+- Command Dispatching: _Type-aware command routing with serialization/deserialization support._
 
 ## Configuration
 
@@ -89,12 +89,12 @@ Redisimnest allows you to customize the following settings:
 - `REDIS_DELETE_CHUNK_SIZE`: Number of items deleted per operation (default: 50).
 
 You can set these via environment variables or within your settings.py:
-``` bash
-    import os
+``` python
+import os
 
-    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
-    REDIS_DELETE_CHUNK_SIZE = 50
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_DELETE_CHUNK_SIZE = 50
 ```
 
 To apply your custom settings file add ```USER_SETTINGS_FILE=./your_settings.py``` path to .env file
