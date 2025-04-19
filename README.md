@@ -1,5 +1,4 @@
-# Redisimnest
-## Redis Imaginary Nesting
+# Redisimnest (Redis Imaginary Nesting)
 
 A sophisticated, prefix-based Redis key management system with customizable, nestable clusters, dynamic key types, and parameterized prefix resolution. Ideal for organizing application state and simplifying Redis interactions in complex systems.
 
