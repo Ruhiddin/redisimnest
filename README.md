@@ -1,4 +1,5 @@
 # Redisimnest _(Redis Imaginary Nesting)_
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **_A sophisticated, prefix-based Redis key management system with customizable, nestable clusters, dynamic key types, and parameterized prefix resolution. Ideal for organizing application state and simplifying Redis interactions in complex systems._**
 
@@ -103,11 +104,11 @@ To apply your custom settings file add ```USER_SETTINGS_FILE=./your_settings.py`
 
 We welcome contributions! To contribute:
 
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes.
-4. Write tests for your changes.
-5. Submit a pull request.
+**1**. Fork the repository.
+**2**. Create a new branch (`git checkout -b feature-branch`).
+**3**. Make your changes.
+**4**. Write tests for your changes.
+**5**. Submit a pull request.
 
 Please ensure all tests pass before submitting your PR.
 
