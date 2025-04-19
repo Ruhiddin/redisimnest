@@ -72,12 +72,12 @@ run(main())
 ## Features
 
 - Prefix-Based Cluster Management: _Organize Redis keys with flexible, dynamic prefixes._
-- Support for Parameterized Keys:_ Create keys with placeholders that can be dynamically replaced._
-- TTL Management: _Automatic and manual control over key TTLs._
-- Cluster Hierarchies: _Nested clusters with inherited parameters._
-- Typed Key Classes: _Use Python types to define and validate Redis key value structures._
-- Auto-Binding & Dynamic Access:_ Smart access to nested clusters and runtime bindings._
-- Command Dispatching: _Type-aware command routing with serialization/deserialization support._
+- *Support for Parameterized Keys:*_ Create keys with placeholders that can be dynamically replaced._
+- *TTL Management:* _Automatic and manual control over key TTLs._
+- *Cluster Hierarchies:* _Nested clusters with inherited parameters._
+- *Typed Key Classes*: _Use Python types to define and validate Redis key value structures._
+- *Auto-Binding & Dynamic Access:*_ Smart access to nested clusters and runtime bindings._
+- *Command Dispatching:* _Type-aware command routing with serialization/deserialization support._
 
 ## Configuration
 
