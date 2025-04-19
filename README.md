@@ -71,7 +71,7 @@ run(main())
 
 ## Features
 
-- Prefix-Based Cluster Management: _Organize Redis keys with flexible, dynamic prefixes._
+- *Prefix-Based Cluster Management:* _Organize Redis keys with flexible, dynamic prefixes._
 - *Support for Parameterized Keys:*_ Create keys with placeholders that can be dynamically replaced._
 - *TTL Management:* _Automatic and manual control over key TTLs._
 - *Cluster Hierarchies:* _Nested clusters with inherited parameters._
