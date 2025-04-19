@@ -15,57 +15,57 @@ A sophisticated, prefix-based Redis key management system with customizable, nes
 
 You can install Redisimnest via pip:
 
-    ```bash
-    pip install redisimnest
-    ```
+``` bash
+pip install redisimnest
+```
 
 Alternatively, install from source:
 ``` bash
-    git clone https://github.com/yourusername/redisimnest.git
-    cd redisimnest
-    pip install .
+git clone https://github.com/yourusername/redisimnest.git
+cd redisimnest
+pip install .
 ```
 ## Usage
 
 Here's a basic example of how to use Redisimnest in your project:
 ``` python
-    from asyncio import run
-    from redisimnest import BaseCluster, Key
-    from redisimnest.utils import RedisManager
+from asyncio import run
+from redisimnest import BaseCluster, Key
+from redisimnest.utils import RedisManager
 
-    # Define structured key clusters
-    class App:
-        __prefix__ = 'app'
-        __ttl__ = 80
-        tokens = Key('tokens', default=[])
-        pending_users = Key('pending_users')
+# Define structured key clusters
+class App:
+    __prefix__ = 'app'
+    __ttl__ = 80
+    tokens = Key('tokens', default=[])
+    pending_users = Key('pending_users')
 
-    class User:
-        __prefix__ = 'user:{user_id}'
-        __ttl__ = 120
-        age = Key('age', 0)
-        name = Key('name', "Unknown")
+class User:
+    __prefix__ = 'user:{user_id}'
+    __ttl__ = 120
+    age = Key('age', 0)
+    name = Key('name', "Unknown")
 
-    class RootCluster(BaseCluster):
-        __prefix__ = 'root'
-        app = App
-        user = User
-        project_name = Key('project_name')
+class RootCluster(BaseCluster):
+    __prefix__ = 'root'
+    app = App
+    user = User
+    project_name = Key('project_name')
 
-    # Initialize cluster
-    redis = RedisManager.get_client()
-    root = RootCluster(redis_client=redis)
+# Initialize cluster
+redis = RedisManager.get_client()
+root = RootCluster(redis_client=redis)
 
-    # Use like a high-level Redis interface
-    async def main():
-        await root.project_name.set("RedisimNest")
-        await root.user(1).age.set(30)
-        print(await root.user(1).age.get())           # ➜ 30
-        await root.app.tokens.set(["token1", "token2"])
-        await root.app.tokens.expire(60)
-        await root.app.clear()                        # Clear all app-prefixed keys
+# Use like a high-level Redis interface
+async def main():
+    await root.project_name.set("RedisimNest")
+    await root.user(1).age.set(30)
+    print(await root.user(1).age.get())           # ➜ 30
+    await root.app.tokens.set(["token1", "token2"])
+    await root.app.tokens.expire(60)
+    await root.app.clear()                        # Clear all app-prefixed keys
 
-    run(main())
+run(main())
 ```
 
 
