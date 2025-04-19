@@ -68,7 +68,6 @@ run(main())
 ```
 
 
-Check out the full documentation for more advanced use cases and examples.
 
 ## Features
 
@@ -84,10 +83,10 @@ Check out the full documentation for more advanced use cases and examples.
 
 Redisimnest allows you to customize the following settings:
 
-- REDIS_HOST: Redis server hostname (default: localhost).
-- REDIS_PORT: Redis server port (default: 6379).
-- REDIS_USERNAME / REDIS_PASS: Optional authentication credentials.
-- REDIS_DELETE_CHUNK_SIZE: Number of items deleted per operation (default: 50).
+- `REDIS_HOST`: Redis server hostname (default: localhost).
+- `REDIS_PORT`: Redis server port (default: 6379).
+- `REDIS_USERNAME` / REDIS_PASS: Optional authentication credentials.
+- `REDIS_DELETE_CHUNK_SIZE`: Number of items deleted per operation (default: 50).
 
 You can set these via environment variables or within your settings.py:
 ``` bash
