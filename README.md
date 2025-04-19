@@ -1,4 +1,5 @@
 # Redisimnest
+## Redis Imaginary Nesting
 
 A sophisticated, prefix-based Redis key management system with customizable, nestable clusters, dynamic key types, and parameterized prefix resolution. Ideal for organizing application state and simplifying Redis interactions in complex systems.
 
@@ -14,10 +15,12 @@ A sophisticated, prefix-based Redis key management system with customizable, nes
 
 You can install Redisimnest via pip:
 
-    ```pip install redisimnest```
+    ```bash
+    pip install redisimnest
+    ```
 
 Alternatively, install from source:
-```
+``` bash
     git clone https://github.com/yourusername/redisimnest.git
     cd redisimnest
     pip install .
@@ -25,7 +28,7 @@ Alternatively, install from source:
 ## Usage
 
 Here's a basic example of how to use Redisimnest in your project:
-```
+``` python
     from asyncio import run
     from redisimnest import BaseCluster, Key
     from redisimnest.utils import RedisManager
@@ -88,7 +91,7 @@ Redisimnest allows you to customize the following settings:
 - REDIS_DELETE_CHUNK_SIZE: Number of items deleted per operation (default: 50).
 
 You can set these via environment variables or within your settings.py:
-```
+``` bash
     import os
 
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
