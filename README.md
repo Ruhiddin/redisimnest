@@ -176,6 +176,7 @@ import os
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_DELETE_CHUNK_SIZE = 50
+SHOW_METHOD_DISPATCH_LOGS = False # if you want to disable dispatch logs
 ```
 
 To apply your custom settings file, add the following line to your `.env` file:
