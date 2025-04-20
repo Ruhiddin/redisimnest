@@ -7,3 +7,6 @@ ENFORCE_PREFIX_START_WITH_PLACEHOLDER = True  # Default to True
 
 # This setting governs whether the Time-to-Live (TTL) for keys should be automatically renewed before they expire.
 TTL_AUTO_RENEW = False  # Default to False
+
+# Toggle verbose output for method dispatch internals
+SHOW_METHOD_DISPATCH_LOGS = False # default is True

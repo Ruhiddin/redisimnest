@@ -167,6 +167,7 @@ Redisimnest allows you to customize the following settings:
 - `REDIS_PORT`: Redis server port (default: 6379).
 - `REDIS_USERNAME` / `REDIS_PASS`: Optional authentication credentials.
 - `REDIS_DELETE_CHUNK_SIZE`: Number of items deleted per operation (default: 50).
+- `SHOW_METHOD_DISPATCH_LOGS`: Toggle verbose output for method dispatch internals.
 
 You can set these via environment variables or within your settings.py:
 ```python

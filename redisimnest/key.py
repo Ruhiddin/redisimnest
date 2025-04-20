@@ -7,7 +7,7 @@ from .utils.de_serialization import deserialize, serialize
 from .utils.method_maps import DESERIALIZE_COMMANDS, SERIALIZE_COMMANDS, default_methods
 from .utils.misc import get_pretty_representation
 from .utils.prefix import validate_prefix
-from .settings import TTL_AUTO_RENEW
+from .settings import TTL_AUTO_RENEW, SHOW_METHOD_DISPATCH_LOGS
 
 
 
@@ -30,13 +30,9 @@ class KeyArgumentPassing:
                 f"Missing required param(s) {missing} for key prefix '{self.prefix_template}'"
             )
 
-        if self._placeholder_keys:
-            formatted_key = self.prefix_template.format(**kwargs)
-            self.key = f"{self._parent.get_full_prefix()}:{formatted_key}"
-        else:
-            self.key = f"{self._parent.get_full_prefix()}:{self.prefix_template}"
-
+        self._resolved_args = kwargs  # <-- Store the args
         return self
+
 
 
     def __getitem__(self, value):
@@ -67,7 +63,6 @@ class Key(KeyArgumentPassing):
         self.default = default
         self._own_ttl = ttl  # Changed from self.ttl
         self._placeholder_keys = re.findall(r"\{(.*?)\}", prefix_template) if prefix_template else []
-        self.key = None
         self.ttl_auto_renew = ttl_auto_renew
 
     def __new__(cls, *args, **kwargs):
@@ -92,6 +87,20 @@ class Key(KeyArgumentPassing):
         return None  # No TTL found
     
     @property
+    def key(self) -> str:
+        if self._placeholder_keys:
+            if not hasattr(self, "_resolved_args"):
+                raise MissingParameterError(
+                    f"Key '{self._name}' was accessed without required params: {self._placeholder_keys}"
+                )
+            formatted_key = self.prefix_template.format(**self._resolved_args)
+            return f"{self._parent.get_full_prefix()}:{formatted_key}"
+        else:
+            return f"{self._parent.get_full_prefix()}:{self.prefix_template}"
+
+
+
+    @property
     def the_ttl(self):
         return self._resolve_ttl()
     
@@ -102,8 +111,12 @@ class Key(KeyArgumentPassing):
         redis_method = getattr(self._parent._redis, method, None)
         if not callable(redis_method):
             raise AttributeError(f"Redis client does not support method: '{method}'.")
+        
+        full_key_path = self.key
+        if SHOW_METHOD_DISPATCH_LOGS:
+            print(f"[redisimnest] {method.upper():<8} → {full_key_path} | args={args} kwargs={kwargs}")
 
-        # Serialize payloads for write operations
+
         if method in SERIALIZE_COMMANDS:
             if args:
                 args = (serialize(args[0]), *args[1:])
@@ -116,7 +129,7 @@ class Key(KeyArgumentPassing):
         
         if method == "restore":
             ttl_ms = (self.the_ttl or 0) * 1000
-            result = await redis_method(self.key, ttl_ms, *args, **kwargs)
+            result = await redis_method(full_key_path, ttl_ms, *args, **kwargs)
 
             # Also apply TTL again if needed (usually redundant with ttl_ms but keep it if needed)
             if self.the_ttl:
@@ -125,12 +138,7 @@ class Key(KeyArgumentPassing):
             return result  # ✅ Early return here
 
 
-        # Call Redis method
-        print(f'{self.key=}')
-        if not self.key:
-            self.__call__()
-        
-        result = await redis_method(self.key, *args, **kwargs)
+        result = await redis_method(full_key_path, *args, **kwargs)
 
         # Apply TTL manually if method doesn't support it inline
         if method in {"restore"} and self.the_ttl is not None:

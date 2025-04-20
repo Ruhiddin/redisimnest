@@ -11,11 +11,8 @@ from .utils.redis import scan_keys
 
 
 
-# ============================================================================================================================================
-# ============================================================================================================================================
-# ===========================                         CLUSTER ACCESSOR                         ===========================#
-# ============================================================================================================================================
-# ============================================================================================================================================
+
+# ==============______CLUSTER ACCESSOR______=========================================================================================== CLUSTER ACCESSOR
 class ClusterAccessor:
     def __init__(self, cls):
         self.cls = cls
@@ -33,11 +30,10 @@ class ClusterAccessor:
 
 
 
-# ============================================================================================================================================
-# ============================================================================================================================================
-# ===========================                         BOUND CLUSTER FACTORY                         ===========================#
-# ============================================================================================================================================
-# ============================================================================================================================================
+
+
+
+# ==============______BOUDN CLUSTER FACTORY______=========================================================================================== BOUDN CLUSTER FACTORY
 class BoundClusterFactory:
     def __init__(self, parent_instance, cluster_cls):
         self.parent = parent_instance
@@ -92,19 +88,18 @@ class BoundClusterFactory:
 
 
 
-# ============================================================================================================================================
-# ============================================================================================================================================
-# ===========================                         BASE CLUSTER                         ===========================#
-# ============================================================================================================================================
-# ============================================================================================================================================
+
+
+# ====================================================================================================
+# ==============             BASE CLUSTER             ==============#
+# ====================================================================================================
 class BaseCluster:
     __prefix__ = "base"
     __ttl__ = None  # Optional TTL in seconds
     ENABLE_CACHING = True  # Default is ON; override per class if needed
-    # __keys__ = []
-    # __subclusters__ = []
+
     
-    def __init__(self, inherited_params: Dict[str, Any] = None, _parent=None, redis_client=None):
+    def __init__(self, redis_client=None, inherited_params: Dict[str, Any] = None, _parent=None):
         self._inherited_params = inherited_params or {}
         self._parent = _parent
         self._apply_validators()
@@ -125,7 +120,14 @@ class BaseCluster:
                     ) from None
     def _bind_subclusters(self):
         for name, attr in self.__class__.__dict__.items():
-            if inspect.isclass(attr) and hasattr(attr, "__prefix__"):
+            if inspect.isclass(attr):
+                # Enforce that all subclusters declare __prefix__
+                if not hasattr(attr, "__prefix__"):
+                    raise ValueError(
+                        f"Cluster '{attr.__name__}' must define a '__prefix__' attribute "
+                        f"to be used as a subcluster of '{self.__class__.__name__}'"
+                    )
+
                 # Promote non-BaseCluster classes into BaseCluster subclasses
                 if not issubclass(attr, BaseCluster):
                     attr = type(
@@ -133,6 +135,7 @@ class BaseCluster:
                         (BaseCluster, attr),
                         dict(attr.__dict__)
                     )
+
                 validate_prefix(attr.__prefix__, attr.__name__)
                 setattr(self.__class__, name, ClusterAccessor(attr))
 
@@ -196,6 +199,7 @@ class BaseCluster:
     def describe(self):
         prefix = getattr(self.__class__, "__prefix__", "")
         params = re.findall(r"\{(.*?)\}", prefix)
+        missing = [p for p in params if p not in self._inherited_params]
 
         subclusters = []
         keys = []
@@ -212,25 +216,11 @@ class BaseCluster:
         return {
             "prefix": prefix,
             "params": params,
+            "missing_params": missing,
             "subclusters": subclusters,
             "keys": keys
         }
     
-    # def __getattribute__(self, name):
-    #     print(f">>> __getattribute__({name})")
-    #     attr = super().__getattribute__(name)
-
-    #     if inspect.isclass(attr) and hasattr(attr, "__prefix__"):
-    #         print(f"--> Promoting {name} to ClusterAccessor")
-    #         attr = ClusterAccessor(attr)
-    #         setattr(self.__class__, name, attr)
-
-    #     if isinstance(attr, ClusterAccessor):
-    #         print(f"--> Enforcing param resolution for {name}")
-    #         self._compute_full_prefix()
-
-    #     return attr
-
     async def clear(self) -> None:
         """
         Deletes all keys under this cluster by scanning with the cluster prefix.
