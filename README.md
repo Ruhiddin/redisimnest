@@ -19,7 +19,6 @@
 - **Support for Parameterized Keys:**_ Create keys with placeholders that can be dynamically replaced._
 - **TTL Management:** _Automatic and manual control over key TTLs._
 - **Cluster Hierarchies:** _Nested clusters with inherited parameters._
-- **Typed Key Classes**: _Use Python types to define and validate Redis key value structures._
 - **Auto-Binding & Dynamic Access:**_ Smart access to nested clusters and runtime bindings._
 - **Command Dispatching:** _Type-aware command routing with serialization/deserialization support._
 
@@ -88,19 +87,19 @@ Here's a richer, more detailed introduction for **Cluster** and **Key**, incorpo
 
 ### **Cluster and Key: Advanced Redis Management with Flexibility and Control**
 
-**Redisimnest** offers a sophisticated and elegant approach to managing Redis data with its core concepts of **Cluster** and **Key**. These components, designed with flexibility and fine-grained control in mind, enable you to organize, manage, and scale your Redis keys efficiently. This system also integrates key features like TTL drilling, parameterized prefixes, and safety measures when clearing clusters.
+**Redisimnest** offers a sophisticated and elegant approach to managing Redis data with its core concepts of **Cluster** and **Key**. These components, designed with flexibility and fine-grained control in mind, enable you to organize, manage, and scale your Redis keys efficiently. This system also integrates key features like TTL drilling, parameterized prefixes, and efficient clearing cluster data.
 
 #### **Cluster: Prefix-Based Grouping and Management**
 
 A **Cluster** in **Redisimnest** is a logical grouping of Redis keys that share a common **prefix**. The cluster's prefix acts as an identity for the keys within it, allowing them to be easily managed as a cohesive unit. Each cluster is self-contained and has several key attributes:
 
-- **__prefix__**: Every cluster must have a unique prefix that distinguishes it from others. This prefix is fundamental to its identity and is used in the construction of all keys within the cluster.
-- **__ttl__**: Optional Time-To-Live (TTL) setting at the cluster level. If a child cluster does not have its own TTL, it inherits the TTL from its parent cluster. However, if the child cluster has its own TTL, it takes precedence over the parent's TTL. This structure allows for flexible TTL management while ensuring that keys without a specified TTL default to the parent's TTL settings.
-- **get_full_prefix()**: This method returns the complete Redis key prefix for the cluster. It resolves the prefix by concatenating the prefixes of all ancestor clusters, starting from the root cluster down to the current cluster. Additionally, it resolves and includes any parameters specific to the current cluster, ensuring that the final prefix is fully formed with all necessary contextual information.
+- **`__prefix__`**: Every cluster must have a unique prefix that distinguishes it from others. This prefix is fundamental to its identity and is used in the construction of all keys within the cluster.
+- **`__ttl__`**: Optional Time-To-Live (TTL) setting at the cluster level. If a child cluster does not have its own TTL, it inherits the TTL from its parent cluster. However, if the child cluster has its own TTL, it takes precedence over the parent's TTL. This structure allows for flexible TTL management while ensuring that keys without a specified TTL default to the parent's TTL settings.
+- **`get_full_prefix()`**: This method returns the complete Redis key prefix for the cluster. It resolves the prefix by concatenating the prefixes of all ancestor clusters, starting from the root cluster down to the current cluster. Additionally, it resolves and includes any parameters specific to the current cluster, ensuring that the final prefix is fully formed with all necessary contextual information.
 
-- **subkeys()**: The `subkeys` method allows you to retrieve a list of keys that begin with the current cluster's full prefix. It uses Redis’s SCAN method to efficiently scan and identify all keys that match the current cluster's prefix, including any subkeys that are nested under the cluster. This ensures a comprehensive and performant way of discovering keys associated with the cluster and its parameters.
+- **`subkeys()`**: The `subkeys` method allows you to retrieve a list of keys that begin with the current cluster's full prefix. It uses Redis’s SCAN method to efficiently scan and identify all keys that match the current cluster's prefix, including any subkeys that are nested under the cluster. This ensures a comprehensive and performant way of discovering keys associated with the cluster and its parameters.
 
-- **clear()**: The `clear` method is used to delete all keys within the cluster. **Warning**: Clearing a cluster will delete all data within it, and **Redisimnest** does **not** prevent accidental data loss. It is **highly recommended to use caution when invoking this method**, especially for clusters that are important or non-recoverable. **Redisimnest** does not enforce safety on clear operations, so be careful when clearing clusters, particularly the **root cluster**.
+- **`clear()`**: The `clear` method is used to delete all keys within the cluster. **Warning**: Clearing a cluster will delete all data within it, and **Redisimnest** does **not** prevent accidental data loss. It is **highly recommended to use caution when invoking this method**, especially for clusters that are important or non-recoverable. **Redisimnest** does not enforce safety on clear operations, so be careful when clearing clusters, particularly the **root cluster**.
 
 #### **Key: Parameterized, Flexible Redis Keys**
 
@@ -136,6 +135,7 @@ Each **Key** in a cluster represents an individual Redis entry and follows the c
   ```
 
 Always pass parameters as part of the chaining syntax to avoid errors and ensure correct key resolution.
+
 
 **Note**: You can use **`[]` brackets** for clusters or keys that require **only a single parameter**. This allows for a simplified, compact syntax when accessing parameters.
 
