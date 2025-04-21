@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from .exceptions import MissingParameterError, ParameterValidationError
 
-from .settings import REDIS_DELETE_CHUNK_SIZE
+from .settings import REDIS_DELETE_CHUNK_SIZE, SHOW_METHOD_DISPATCH_LOGS
 from .utils.misc import get_pretty_representation
 from .utils.prefix import validate_prefix
 from .utils.redis import scan_keys
@@ -235,6 +235,9 @@ class BaseCluster:
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
             await self._redis.delete(*chunk)
 
+        if SHOW_METHOD_DISPATCH_LOGS:
+            print(f"[redisimnest] CLEAR → on cluster {self.__class__.__name__}: deleted keys: {keys}")
+            
         return True
     
     async def subkeys(self) -> None:
