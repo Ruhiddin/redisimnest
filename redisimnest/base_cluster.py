@@ -230,13 +230,14 @@ class BaseCluster:
         
         if not keys:
             return
-        
+        chunks = []
         for i in range(0, len(keys), REDIS_DELETE_CHUNK_SIZE):
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
-            await self._redis.delete(*chunk)
+            result = await self._redis.delete(*chunk)
+            chunks.append(f"[redisimnest] CLEAR → Cluster: {self.__class__.__name__} | chunk: {i+1} | deleted: {result} | keys: {chunk}")
 
         if SHOW_METHOD_DISPATCH_LOGS:
-            print(f"[redisimnest] CLEAR → on cluster {self.__class__.__name__}: deleted keys: {keys}")
+            print('\n'.join(chunks))
             
         return True
     
