@@ -206,8 +206,7 @@ Using `[]` is a convenient shorthand, but it’s important to remember it is lim
 
 
 
-
-Redisimnest allows you to customize the following settings:
+### **Redisimnest allows you to customize the following settings:**
 
 - `REDIS_HOST`: Redis server hostname (default: localhost).
 - `REDIS_PORT`: Redis server port (default: 6379).
