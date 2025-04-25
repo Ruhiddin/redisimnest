@@ -172,7 +172,7 @@ Using `[]` is a convenient shorthand, but it’s important to remember it is lim
 
 - **Native deserialization with type detection** – When it's important to recover both the original value **and** its precise type.
 
-  ```python
+  ``` python
   from redisimnest.utils import serialize, deserialize
   from datetime import datetime
 
@@ -190,7 +190,7 @@ Using `[]` is a convenient shorthand, but it’s important to remember it is lim
 
 - **Get type as string** – Useful when storing or logging metadata, or for lightweight type comparison across systems.
 
-  ```python
+  ``` python
   from redisimnest.utils import serialize, deserialize
   from uuid import UUID
 
