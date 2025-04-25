@@ -230,7 +230,7 @@ To apply your custom settings file, add the following line to your `.env` file:
 USER_SETTINGS_FILE=./your_settings.py
 ```
 
-## Contributing <a name="contributing"></a>
+## Contributing <a name="contributing"> </a>
 
 We welcome contributions! To contribute:
 
