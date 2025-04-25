@@ -1,9 +1,10 @@
+import json
 from typing import Any, Optional
 import re
 
 from .exceptions import MissingParameterError
 
-from .utils.de_serialization import deserialize, serialize
+from .utils.de_serialization import SERIALIZED_TYPE_MAP, deserialize, serialize
 from .utils.method_maps import DESERIALIZE_COMMANDS, SERIALIZE_COMMANDS, default_methods
 from .utils.misc import get_pretty_representation
 from .utils.prefix import validate_prefix
@@ -97,6 +98,34 @@ class Key(KeyArgumentPassing):
             return f"{self._parent.get_full_prefix()}:{formatted_key}"
         else:
             return f"{self._parent.get_full_prefix()}:{self.prefix_template}"
+    
+    @property
+    async def the_type(self) -> Optional[str]:
+        """
+        Returns the Python `type` object of the value stored at this key, if available.
+        """
+        the_key = self.key
+        raw_value = await self._parent._redis.get(the_key)
+
+        if raw_value is None:
+            return None  # No value present at key
+
+        try:
+            if isinstance(raw_value, bytes):
+                raw_value = raw_value.decode()
+            data = json.loads(raw_value)
+
+            if isinstance(data, dict) and "__type__" in data:
+                return SERIALIZED_TYPE_MAP.get(data["__type__"], None)
+        except Exception:
+            pass  # Not serialized with our method
+
+
+    async def delete(self):
+        """Deletes the current key itself"""
+        the_key = self.key
+        return await self._parent._redis.delete(the_key)
+
 
 
 

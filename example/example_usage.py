@@ -1,4 +1,5 @@
 from asyncio import run
+from datetime import datetime
 from redisimnest import BaseCluster, Key
 from redisimnest.utils import RedisManager
 from redis.exceptions import DataError
@@ -109,6 +110,18 @@ async def main_test():
     all_keys = set(await root.subkeys())
     assert all_keys is not None
     assert all_keys.intersection(app_keys) == set()
+
+    the_type = await root.project_name.the_type
+    assert the_type is str
+
+    await root.project_name.delete()
+    the_type = await root.project_name.the_type
+    assert the_type is None
+
+    await root.date.set(datetime.now())
+    dt_type = await root.date.the_type
+    assert dt_type is datetime
+
 
     # # Check existence first
     # exists = bool(await root.project_name.exists())

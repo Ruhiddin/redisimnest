@@ -4,6 +4,20 @@ from uuid import UUID
 from typing import Any, Union
 
 
+
+SERIALIZED_TYPE_MAP = {
+    "datetime": datetime,
+    "uuid": UUID,
+    "tuple": tuple,
+    "bool": bool,
+    "int": int,
+    "float": float,
+    "str": str,
+    "list": list,
+    "dict": dict,
+}
+
+
 def serialize(value: Any) -> bytes:
     """Serializes a value into bytes with embedded type metadata."""
     if isinstance(value, datetime):

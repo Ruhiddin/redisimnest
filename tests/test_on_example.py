@@ -195,6 +195,21 @@ async def main_test():
     await root.date.set(now)
     assert await root.date.get() == now
 
+    
+    
+    # ==============______the_type method______=========================================================================================== the_type method
+    the_type = await root.project_name.the_type
+    assert the_type is str
+
+    await root.project_name.delete()
+    the_type = await root.project_name.the_type
+    assert the_type is None
+
+    await root.date.set(datetime.now())
+    dt_type = await root.date.the_type
+    assert dt_type is datetime
+
+
 
 
 class TestHandlers:
