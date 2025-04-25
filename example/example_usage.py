@@ -1,7 +1,7 @@
 from asyncio import run
 from datetime import datetime
 from redisimnest import BaseCluster, Key
-from redisimnest.utils import RedisManager
+from redisimnest.utils import RedisManager, serialize, deserialize
 from redis.exceptions import DataError
 
 
@@ -121,6 +121,15 @@ async def main_test():
     await root.date.set(datetime.now())
     dt_type = await root.date.the_type
     assert dt_type is datetime
+
+
+
+    value = datetime.now()
+    serialized = serialize(value)
+    the_type, the_value = deserialize(serialized, with_type=True)
+    assert the_type is datetime
+    assert the_value == value
+
 
 
     # # Check existence first

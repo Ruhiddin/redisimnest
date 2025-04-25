@@ -38,7 +38,7 @@ def serialize(value: Any) -> bytes:
     return json.dumps(data).encode()
 
 
-def deserialize(raw: Union[bytes, str]) -> Any:
+def deserialize(raw: Union[bytes, str], with_type: bool=False) -> Any:
     """Deserializes bytes or string into Python object based on embedded __type__."""
     if isinstance(raw, bytes):
         raw = raw.decode()
@@ -52,22 +52,28 @@ def deserialize(raw: Union[bytes, str]) -> Any:
     value = data["value"]
 
     if value_type == "datetime":
-        return datetime.fromisoformat(value)
+        result = datetime.fromisoformat(value)
     elif value_type == "uuid":
-        return UUID(value)
+        result = UUID(value)
     elif value_type == "tuple":
-        return tuple(value)
+        result = tuple(value)
     elif value_type == "bool":
-        return bool(value)
+        result = bool(value)
     elif value_type == "int":
-        return int(value)
+        result = int(value)
     elif value_type == "float":
-        return float(value)
+        result = float(value)
     elif value_type == "str":
-        return str(value)
+        result = str(value)
     elif value_type == "list":
-        return list(value)
+        result = list(value)
     elif value_type == "dict":
-        return dict(value)
+        result = dict(value)
     else:
         raise TypeError(f"Unsupported deserialization type: {value_type}")
+    
+    if with_type:
+        the_type = SERIALIZED_TYPE_MAP[value_type]
+        return the_type, result
+    else:
+        return result

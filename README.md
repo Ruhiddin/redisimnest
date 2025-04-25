@@ -166,7 +166,26 @@ You can use **`[]` brackets** for clusters or keys that require **only a single 
 
 Using `[]` is a convenient shorthand, but it’s important to remember it is limited to a **single parameter** only.
 
-## Configuration <a name="configuration"></a>
+### Advanced Use Cases
+
+- **Native deserialization** – Use this when you need to inspect the exact type used during serialization, or when precise type restoration matters.
+
+  ```python
+  from redisimnest.utils import serialize, deserialize
+  from datetime import datetime
+
+  value = datetime.now()
+  serialized = serialize(value)
+
+  # Restore both the type and the original value
+  the_type, the_value = deserialize(serialized, with_type=True)
+
+  assert the_type is datetime
+  assert the_value == value
+  ```
+
+
+name="configuration"></a>
 
 Redisimnest allows you to customize the following settings:
 
