@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='redisimnest',
-    version='0.3.3',
+    version='0.3.4',
     packages=find_packages(),
     install_requires=[
         'redis>=5.0', 
