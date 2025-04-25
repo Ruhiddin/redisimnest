@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 import pytest
 from asyncio import run
 from ..redisimnest.key import Key 
@@ -213,11 +214,20 @@ async def main_test():
     
     # ==============______(de)serialize usage______=========================================================================================== serialize usage
     value = datetime.now()
-    serialized = serialize(value)
-    the_type, the_value = deserialize(serialized, with_type=True)
-    assert the_type is datetime
-    assert the_value == value
+    raw = serialize(value)
+    value_type, restored_value = deserialize(raw, with_type=True)
 
+    assert value_type is datetime
+    assert restored_value == value
+
+
+
+    original = UUID("12345678-1234-5678-1234-567812345678")
+    original_type_str, raw = serialize(original, with_type=True, with_type_str=True)
+    type_str, restored = deserialize(raw, with_type=True, with_type_str=True)
+
+    assert type_str == original_type_str
+    assert restored == original
 
 
 class TestHandlers:

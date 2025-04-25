@@ -1,5 +1,6 @@
 from asyncio import run
 from datetime import datetime
+from uuid import UUID
 from redisimnest import BaseCluster, Key
 from redisimnest.utils import RedisManager, serialize, deserialize
 from redis.exceptions import DataError
@@ -124,19 +125,21 @@ async def main_test():
 
 
 
+
     value = datetime.now()
-    serialized = serialize(value)
-    the_type, the_value = deserialize(serialized, with_type=True)
-    assert the_type is datetime
-    assert the_value == value
+    raw = serialize(value)
+    value_type, restored_value = deserialize(raw, with_type=True)
+
+    assert value_type is datetime
+    assert restored_value == value
 
 
 
-    # # Check existence first
-    # exists = bool(await root.project_name.exists())
-    # print(f"Key exists: {exists}")
+    original = UUID("12345678-1234-5678-1234-567812345678")
+    original_type_str, raw = serialize(original, with_type=True, with_type_str=True)
+    type_str, restored = deserialize(raw, with_type=True, with_type_str=True)
 
-    # # If exists is False, then assert None for get
-    # assert exists is False
+    assert type_str == original_type_str
+    assert restored == original
 
 run(main_test())

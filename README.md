@@ -166,26 +166,46 @@ You can use **`[]` brackets** for clusters or keys that require **only a single 
 
 Using `[]` is a convenient shorthand, but it’s important to remember it is limited to a **single parameter** only.
 
+
+
 ### Advanced Use Cases
 
-- **Native deserialization** – Use this when you need to inspect the exact type used during serialization, or when precise type restoration matters.
+- **Native deserialization with type detection** – When it's important to recover both the original value **and** its precise type.
 
   ```python
   from redisimnest.utils import serialize, deserialize
   from datetime import datetime
 
   value = datetime.now()
-  serialized = serialize(value)
+  
+  # Serialize with no type return
+  raw = serialize(value)
 
-  # Restore both the type and the original value
-  the_type, the_value = deserialize(serialized, with_type=True)
+  # Deserialize and recover the actual Python type
+  value_type, restored_value = deserialize(raw, with_type=True)
 
-  assert the_type is datetime
-  assert the_value == value
+  assert value_type is datetime
+  assert restored_value == value
+  ```
+
+- **Get type as string** – Useful when storing or logging metadata, or for lightweight type comparison across systems.
+
+  ```python
+  from redisimnest.utils import serialize, deserialize
+  from uuid import UUID
+
+  original = UUID("12345678-1234-5678-1234-567812345678")
+  _, raw = serialize(original, with_type=True, with_type_str=True)
+
+  # Deserialize and get the type as a string
+  type_str, restored = deserialize(raw, with_type=True, with_type_str=True)
+
+  assert type_str == "uuid"
+  assert restored == original
   ```
 
 
-name="configuration"></a>
+
 
 Redisimnest allows you to customize the following settings:
 
