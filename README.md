@@ -79,6 +79,13 @@ async def main():
     await root.app.tokens.expire(60)
     await root.app.clear()  # Clear all keys under the 'app' prefix
 
+    the_type = await root.project_name.the_type # we don't have to call since it's property, but don't forget `await` expression
+    assert the_type is str # the type of value was `string` (every value is serialized with metadata `__type__` under the hood)
+
+    await root.project_name.delete()
+    the_type = await root.project_name.the_type
+    assert the_type is None # deleted keys have no type
+
 run(main())
 ```
 
