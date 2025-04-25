@@ -3,6 +3,8 @@ from datetime import datetime
 from uuid import UUID
 from typing import Any, Union
 
+
+
 SERIALIZED_TYPE_MAP = {
     "datetime": datetime,
     "uuid": UUID,
@@ -32,7 +34,7 @@ def serialize(value: Any, with_type: bool = False, with_type_str: bool = False) 
 
     Returns:
         bytes: The serialized representation of the value.
-        tuple[Any, bytes]: If with_type is True, returns the resolved type and the serialized bytes.
+        tuple[the_type, bytes]: If with_type is True, returns the resolved type and the serialized bytes.
 
     Raises:
         TypeError: If the value is not of a supported type.
@@ -76,8 +78,8 @@ def deserialize(raw: Union[bytes, str], with_type: bool = False, with_type_str: 
             instead of a Python type.
 
     Returns:
-        Any: The deserialized Python value.
-        tuple[Any, Any]: If with_type is True, returns the resolved type and the deserialized value.
+        value: The deserialized Python value.
+        tuple[the_type, value]: If with_type is True, returns the resolved type and the deserialized value.
 
     Raises:
         ValueError: If the serialized data is not properly formatted or missing the "__type__" field.
