@@ -15,6 +15,7 @@ SERIALIZED_TYPE_MAP = {
     "str": str,
     "list": list,
     "dict": dict,
+    "none": None
 }
 """Mapping of string type identifiers to corresponding Python types for supported serializations."""
 
@@ -51,6 +52,8 @@ def serialize(value: Any, with_type: bool = False, with_type_str: bool = False) 
         data = {"__type__": type(value).__name__, "value": value}
     elif isinstance(value, (dict, list)):
         data = {"__type__": type(value).__name__, "value": value}
+    elif value is None:
+        data = {"__type__": 'none', 'value': 'None'}
     else:
         raise TypeError(f"Unsupported value type: {type(value)}")
     
@@ -114,6 +117,8 @@ def deserialize(raw: Union[bytes, str], with_type: bool = False, with_type_str: 
         result = list(value)
     elif value_type == "dict":
         result = dict(value)
+    elif value_type == 'none':
+        result = None
     else:
         raise TypeError(f"Unsupported deserialization type: {value_type}")
     

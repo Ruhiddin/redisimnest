@@ -1,6 +1,6 @@
 [project]
 name = "redisimnest"
-version = "0.3.4"
+version = "0.4.0"
 description = "(Redis Imaginary Nesting) brings poetic structure to Redis with elegant, nestable clusters—turning your keyspace into a meaningful, typed, and navigable hierarchy."
 authors = [{name="Ruhiddin Turdaliyev", email="niddihur@gmail.com"}]
 license = {text = "MIT"}
@@ -10,6 +10,11 @@ dependencies = [
   "redis>=5.0.0",
   'pytest>=8.3.5'
 ]
+
+[project.optional-dependencies]
+crypto = ["cryptography"]
+bcrypt = ["bcrypt"]
+
 
 [project.urls]
 "Homepage" = "https://github.com/ruhiddin/redisimnest"

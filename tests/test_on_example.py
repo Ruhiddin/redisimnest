@@ -4,8 +4,8 @@ import pytest
 from asyncio import run
 from ..redisimnest.key import Key 
 from ..redisimnest.base_cluster import BaseCluster
-from ..redisimnest.exceptions import MissingParameterError
 from ..redisimnest.utils import RedisManager, serialize, deserialize
+from ..redisimnest.exceptions import AccessDeniedError, MissingParameterError
 from redis.exceptions import DataError
 
 
@@ -30,6 +30,9 @@ class User:
     messages = Message
     fist_name = Key('firt_name')
     age = Key('age', 0)
+
+    password = Key('password', 'simple_pass', is_password=True)
+    sensitive_data = Key('sensitive_data', None, is_secret=True)
 
 class App:
     __prefix__ = 'app'
@@ -230,6 +233,105 @@ async def main_test():
     assert restored == original
 
 
+async def secret_password_test():
+    user_key = root.user(user_id=42)
+
+    
+    
+    # ==============______PASSWORD______=========================================================================================== PASSWORD
+
+    # PASSWORD: Set and verify correct password
+    await user_key.password.set("hunter2")
+    assert await user_key.password.verify_password("hunter2") is True
+
+    # PASSWORD: Reject wrong password
+    assert await user_key.password.verify_password("not-hunter2") is False
+
+    # PASSWORD: Verify without setting (should fail)
+    await user_key.password.delete()
+    assert await user_key.password.verify_password("anything") is None
+
+    # PASSWORD: Set again and test it hashes (not stored as plain)
+    await user_key.password.set("again123")
+    hashed = await user_key.password.get(reveal=True)
+    assert hashed != "again123"
+
+    # PASSWORD: Should raise if trying to access directly
+    try:
+        await user_key.password.get()
+        assert False, "Should raise TypeError"
+    except AccessDeniedError:
+        pass
+
+    # PASSWORD: Reject non-string input
+    try:
+        await user_key.password.set(12345)
+    except TypeError:
+        pass
+
+    # PASSWORD: Delete and confirm it's gone
+    await user_key.password.set("temp_pass")
+    await user_key.password.delete()
+    assert await user_key.password.verify_password("temp_pass") is None
+
+    # PASSWORD: Double set causes different hash (rehash)
+    await user_key.password.set("same-pass")
+    hash1 = await user_key.password.get(reveal=True)
+    await user_key.password.set("same-pass")
+    hash2 = await user_key.password.get(reveal=True)
+    assert hash1 != hash2
+
+    
+    
+    # ==============______SECRET______=========================================================================================== SECRET
+
+    # SECRET: Set and retrieve
+    await user_key.sensitive_data.set("some top secret")
+    val = await user_key.sensitive_data.get()
+    assert val == "some top secret"
+
+    # SECRET: Setting None is allowed
+    await user_key.sensitive_data.set(None)
+    assert await user_key.sensitive_data.get() is None
+
+    # SECRET: Reject non-string input
+    try:
+        await user_key.sensitive_data.set(999)
+    except TypeError:
+        pass
+
+    # SECRET: Set twice, different ciphertext
+    await user_key.sensitive_data.set("same secret")
+    enc1 = await user_key.sensitive_data.raw()
+    await user_key.sensitive_data.set("same secret")
+    enc2 = await user_key.sensitive_data.raw()
+    assert enc1 != enc2
+
+    # SECRET: Delete removes value
+    await user_key.sensitive_data.set("to be deleted")
+    await user_key.sensitive_data.delete()
+    assert await user_key.sensitive_data.get() is None
+
+    # PASSWORD & SECRET: Confirm `repr()` includes names
+    assert "password" in repr(user_key.password)
+    assert "sensitive_data" in repr(user_key.sensitive_data)
+
+    # PASSWORD & SECRET: Check `the_type`
+    await user_key.sensitive_data.set("test type")
+    assert await user_key.sensitive_data.the_type is str
+
+    # PASSWORD & SECRET: Docs mention their roles
+    assert "is_password" in user_key.password.__doc__
+    assert "is_secret" in user_key.sensitive_data.__doc__
+
+
 class TestHandlers:
-    def test_handers(self):
-        run(main_test())
+    def test_main(self):
+        async def run_subtests():
+            await main_test()
+            await secret_password_test()
+        run(run_subtests())
+    
+
+
+
