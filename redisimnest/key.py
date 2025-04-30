@@ -293,9 +293,26 @@ class Key(KeyArgumentPassing):
 
     
     def __get__(self, instance, owner):
-        self._parent = instance
-        validate_prefix(self.prefix_template, instance.__class__.__name__)
-        return self
+        if instance is None:
+            return self  # Accessed on the class, return the descriptor itself
+
+        bound_key = self._copy()
+        bound_key._parent = instance
+        validate_prefix(bound_key.prefix_template, instance.__class__.__name__)
+        return bound_key
+
+    def _copy(self):
+        new = self.__class__(
+            prefix_template=self.prefix_template,
+            default=self.default,
+            ttl=self._own_ttl,
+            ttl_auto_renew=self.ttl_auto_renew,
+            is_secret=self.is_secret,
+            is_password=self.is_password
+        )
+        new._name = getattr(self, '_name', None)
+        return new
+
     
     
     @classmethod
