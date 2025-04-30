@@ -152,16 +152,13 @@ class Key(KeyArgumentPassing):
         if not self.is_password:
             raise TypeError("This key does not store a password hash.")
         
-        print(f'{plain_password=}')
         hashed = await self._parent._redis.get(self.key)
         if not hashed:
             return None
         
         deserialized = deserialize(hashed)
 
-        print(f'{deserialized}')
         if not isinstance(deserialized, str):
-            print('even did not try to check')
             return False
 
         try:
@@ -216,7 +213,8 @@ class Key(KeyArgumentPassing):
 
         full_key_path = self.key
         if SHOW_METHOD_DISPATCH_LOGS:
-            print(f"[redisimnest] {method.upper():<8} → {full_key_path} | args={args} kwargs={kwargs}")
+            key_status = 'secret' if self.is_secret else 'password' if self.is_password else 'plainkey'
+            print(f"[redisimnest] {method.upper():<8} → [{key_status}]: {full_key_path} | args={args} kwargs={kwargs}")
 
 
         if method in SERIALIZE_COMMANDS:
@@ -245,7 +243,12 @@ class Key(KeyArgumentPassing):
 
         if method == 'get' and self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
+
+        
+
         result = await redis_method(full_key_path, *args, **kwargs)
+
+
 
         # Apply TTL manually if method doesn't support it inline
         if method in {"restore"} and self.the_ttl is not None:
@@ -255,6 +258,7 @@ class Key(KeyArgumentPassing):
         if self.ttl_auto_renew and method in DESERIALIZE_COMMANDS and self.the_ttl is not None:
             await self._parent._redis.expire(self._name, self.the_ttl)
 
+
         # Deserialize result for read operations
         if method in DESERIALIZE_COMMANDS:
             # Fallback to default if result is None
@@ -262,32 +266,26 @@ class Key(KeyArgumentPassing):
                 return self.default if self.default is not None else None
             
             result = deserialize(result)
-            print(f'deserialized result in get: {result}')
-
-            print(f"{self.is_secret=}")
 
             if result is None:
                 return result
             
             
             if self.is_secret:
-                print('key is secret trying to encode with fernet')
                 try:
                     ENCRYPTION_KEY = get_encryption_key()
                     fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
                     fernet_result =  fernet.decrypt(result.encode()).decode()
-                    print(f'fernet result: {fernet_result}')
                     return fernet_result
                 except Exception:
                     return "[decryption-error]"
 
             # Password hashes should never be returned
-            print(f'{self.is_password=}')
             if self.is_password:
                 if reveal:
                     return result
                 raise AccessDeniedError("To access secrets, set ALLOW_SECRET_ACCESS=1.")
-
+        
         return result
 
     def __set_name__(self, owner, name: str):

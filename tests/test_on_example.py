@@ -135,6 +135,7 @@ class TestTTLDrilling:
 
 
 async def main_test():
+    await root.clear()
     await root.project_name.set("RedisimNest")
     assert await root.project_name.get() == "RedisimNest"
 
@@ -233,7 +234,32 @@ async def main_test():
     assert restored == original
 
 
+
+    
+    # ==============______CLEAR METHOD TEST______=========================================================================================== CLEAR METHOD TEST
+    await root.admin(123).fist_name.set("Ali")
+    name = await root.admin(123).fist_name.get()
+    assert name == 'Ali'
+
+    await root.admin(123).clear()
+
+    name = await root.admin(123).fist_name.get()
+    assert name is None
+
+
+
+    await root.user(123).messages.message(123).set("the message")
+    the_message = await root.user(123).messages.message(123).get()
+    assert the_message == 'the message'
+
+    await root.user(123).clear()
+
+    the_message = await root.user(123).messages.message(123).get()
+    assert the_message == "Unknown Message"
+
+
 async def secret_password_test():
+    await root.clear()
     user_key = root.user(user_id=42)
 
     
@@ -323,6 +349,69 @@ async def secret_password_test():
     # PASSWORD & SECRET: Docs mention their roles
     assert "is_password" in user_key.password.__doc__
     assert "is_secret" in user_key.sensitive_data.__doc__
+
+
+    # ==============______CHECK STALE DATA______=========================================================================================== CHECK STALE DATA  
+    await root.user(123).age.set(25)
+    data = await root.user(123).age.get()
+    assert data == 25
+
+    id_1 = id(data)
+
+    non_existing_data = await root.user(321).age.get()
+    assert non_existing_data == 0
+
+    await root.user(321).age.set(52)
+    data = await root.user(321).age.get()
+    assert data == 52
+
+    id_2 = id(data)
+
+    assert id_1 != id_2
+
+
+
+
+    await root.clear()
+    await root.user(123).age.set(123)
+    data = await root.user(123).age.get()
+    await root.user(123).clear()
+    data = await root.user(123).age.get()
+
+    assert data == 0
+
+
+
+    await root.clear()
+    await root.user(123).age.set(123)
+    data = await root.user(123).age.get()
+    await root.user(123).age.set(321)
+    data = await root.user(123).age.get()
+
+    assert data == 321
+
+    
+
+
+
+    await root.clear()
+    user = root.user(123)
+    age = user.age
+
+    await age.set(123)
+    data = await age.get()
+    await user.clear()
+    data = await age.get()
+
+    assert data == 0
+
+    user = root.user(321)
+    age = user.age
+
+    assert await age.get() == 0
+
+
+
 
 
 class TestHandlers:
