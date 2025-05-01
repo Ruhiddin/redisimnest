@@ -1,11 +1,11 @@
 import json
-from typing import Any, Optional
+from typing import Any, Awaitable, Optional, Union
 import re
 
 from .exceptions import AccessDeniedError, MissingParameterError
 
 from .utils.de_serialization import SERIALIZED_TYPE_MAP, deserialize, serialize
-from .utils.method_maps import DESERIALIZE_COMMANDS, SERIALIZE_COMMANDS, default_methods
+from .utils.method_maps import with_logging
 from .utils.misc import get_encryption_key, get_pretty_representation, lazy_import
 from .utils.prefix import validate_prefix
 from .settings import TTL_AUTO_RENEW, SHOW_METHOD_DISPATCH_LOGS
@@ -50,12 +50,153 @@ class KeyArgumentPassing:
 
 
 
+
+# ====================================================================================================
+# ==============             METHODS             ==============#
+# ====================================================================================================
+class RedisMethodMixin:
+
+    @with_logging
+    async def set(self, value, ex=None, px=None, nx=False, xx=False, keepttl=False, get=False, exat=None, pxat=None) -> Union[Awaitable[Any], Any]:
+        """Set the value of a key."""
+        value = self._resolve_value(value)
+        value = serialize(value)
+        
+        if self.the_ttl is not None:
+            ex = ex or self.the_ttl
+        
+        return await self._parent.redis.set(self.key, value, ex, px, nx, xx, keepttl, get, exat, pxat)
+
+
+    @with_logging
+    async def get(self, reveal: bool=False, *args, **kwargs) -> Union[Awaitable[Any], Any]:
+        """Get the value of a key."""
+        if self.is_password:
+            Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
+
+        result = await self._parent.redis.get(self.key, *args, **kwargs)
+
+
+        # Fallback to default if result is None
+        if result is None:
+            return self.default if self.default is not None else None
+        
+        result = deserialize(result)
+
+
+        if result is None:
+            return result
+        
+        
+        if self.is_secret:
+            try:
+                ENCRYPTION_KEY = get_encryption_key()
+                fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
+                fernet_result =  fernet.decrypt(result.encode()).decode()
+                return fernet_result
+            except Exception:
+                return "[decryption-error]"
+
+        # Password hashes should never be returned
+        if self.is_password:
+            if reveal:
+                return result
+            raise AccessDeniedError("To access secrets, set ALLOW_SECRET_ACCESS=1.")
+
+        # Handle auto-renew on read if enabled
+        if self.ttl_auto_renew and self.the_ttl is not None:
+            await self._parent.redis.expire(self._name, self.the_ttl)
+
+        return result
+        
+    @with_logging
+    async def exists(self) -> Union[Awaitable, Any]:
+        """Check if a key exists."""
+
+        return await self._parent.redis.exists(self.key)
+
+    @with_logging
+    async def expire(self, time, nx=False, xx=False, gt=False, lt=False) -> Union[Awaitable, Any]:
+        """Set a timeout on a key in seconds."""
+
+        return await self._parent.redis.expire(self.key, time, nx, xx, gt, lt)
+
+    @with_logging
+    async def pexpire(self, time, nx=False, xx=False, gt=False, lt=False) -> Union[Awaitable[Any], Any]:
+        """Set a timeout on a key in milliseconds."""
+        return await self._parent.redis.pexpire(self.key, time, nx, xx, gt, lt)
+
+    @with_logging
+    async def expireat(self, when, nx=False, xx=False, gt=False, lt=False) -> Union[Awaitable, Any]:
+        """Set a key to expire at a specific Unix time (seconds)."""
+
+        return await self._parent.redis.expireat(self.key, when, nx, xx, gt, lt)
+
+    @with_logging
+    async def pexpireat(self, when, nx=False, xx=False, gt=False, lt=False) -> Union[Awaitable[Any], Any]:
+        """Set a key to expire at a specific Unix time (milliseconds)."""
+
+        return await self._parent.redis.pexpireat(self.key, when, nx, xx, gt, lt)
+
+    @with_logging
+    async def persist(self) -> Union[Awaitable[Any], Any]:
+        """Remove the existing timeout from a key."""
+
+        return await self._parent.redis.persist(self.key)
+
+    @with_logging
+    async def ttl(self) -> Union[Awaitable[Any], Any]:
+        """Get the remaining time to live of a key in seconds."""
+
+        return await self._parent.redis.ttl(self.key)
+
+    @with_logging
+    async def pttl(self) -> Union[Awaitable[Any], Any]:
+        """Get the remaining time to live of a key in milliseconds."""
+
+        return await self._parent.redis.pttl(self.key)
+
+    @with_logging
+    async def expiretime(self) -> Union[Awaitable, Any]:
+        """Returns the absolute Unix timestamp (since January 1, 1970) in seconds at which the given key will expire"""
+
+        return await self._parent.redis.expiretime(self.key)
+
+    @with_logging
+    async def type(self) -> Union[Awaitable[Any], Any]:
+        """Return the data type of the value stored at key."""
+
+        return await self._parent.redis.type(self.key)
+
+    @with_logging
+    async def memory_usage(self, samples: int=None) -> Union[Awaitable, Any]:
+        """Estimate the memory usage of a key in bytes."""
+
+        return await self._parent.redis.memory_usage(self.key, samples)
+
+    @with_logging
+    async def touch(self) -> Union[Awaitable, Any]:
+        """Alters the last access time of a key."""
+
+        return await self._parent.redis.touch(self.key)
+
+    @with_logging
+    async def unlink(self) -> Union[Awaitable, Any]:
+        """Asynchronously delete a key (non-blocking DEL)."""
+
+        return await self._parent.redis.unlink(self.key)
+    
+    @with_logging
+    async def delete(self) -> Union[Awaitable, Any]:
+        """Deletes the current key itself"""
+        return await self._parent.redis.delete(self.key)
+
 # ============================================================================================================================================
 # ============================================================================================================================================
 # ===========================                         BASE KEY                         ===========================#
 # ============================================================================================================================================
 # ============================================================================================================================================
-class Key(KeyArgumentPassing):
+class Key(KeyArgumentPassing, RedisMethodMixin):
     def __init__(
         self, 
         prefix_template: str, 
@@ -82,8 +223,6 @@ class Key(KeyArgumentPassing):
 
     def __new__(cls, *args, **kwargs):
         instance = super().__new__(cls)
-
-        cls._generate_methods()
         return instance
 
     def _resolve_ttl(self):
@@ -103,7 +242,7 @@ class Key(KeyArgumentPassing):
     
     async def raw(self):
         """Returns the data as is as stored in redis"""
-        return await self._parent._redis.get(self.key)
+        return await self._parent.redis.get(self.key)
 
     
     @property
@@ -125,7 +264,7 @@ class Key(KeyArgumentPassing):
         Returns the Python `type` object of the value stored at this key, if available.
         """
         the_key = self.key
-        raw_value = await self._parent._redis.get(the_key)
+        raw_value = await self._parent.redis.get(the_key)
 
         if raw_value is None:
             return None  # No value present at key
@@ -140,19 +279,17 @@ class Key(KeyArgumentPassing):
         except Exception:
             pass  # Not serialized with our method
 
-
-    async def delete(self):
-        """Deletes the current key itself"""
-        the_key = self.key
-        return await self._parent._redis.delete(the_key)
-
-
+    @property
+    def redis(self):
+        """Access to redis client attached to base cluster"""
+        return self._parent.redis
+    
     async def verify_password(self, plain_password: str) -> bool:
         """Verifies given password with original"""
         if not self.is_password:
             raise TypeError("This key does not store a password hash.")
         
-        hashed = await self._parent._redis.get(self.key)
+        hashed = await self._parent.redis.get(self.key)
         if not hashed:
             return None
         
@@ -183,10 +320,8 @@ class Key(KeyArgumentPassing):
         if not isinstance(payload, str):
             raise TypeError("Passwords and secrets must be strings.")
         
-        
         if self.is_secret and isinstance(payload, str) and payload.startswith("gAAAA"):
             return payload  # already encrypted
-
 
         if self.is_password and isinstance(payload, str) and payload.startswith("$2b$"):
             return payload  # already hashed
@@ -201,92 +336,6 @@ class Key(KeyArgumentPassing):
             payload = fernet.encrypt(payload.encode()).decode()
         return payload
 
-    async def _dispatch_method(self, method: str, *args, **kwargs) -> Any:
-        if method not in default_methods:
-            raise AttributeError(f"Unsupported method: '{method}'.")
-
-        redis_method = getattr(self._parent._redis, method, None)
-        if not callable(redis_method):
-            raise AttributeError(f"Redis client does not support method: '{method}'.")
-        
-        reveal = kwargs.pop('reveal', False)
-
-        full_key_path = self.key
-        if SHOW_METHOD_DISPATCH_LOGS:
-            key_status = 'secret' if self.is_secret else 'password' if self.is_password else 'plainkey'
-            print(f"[redisimnest] {method.upper():<8} → [{key_status}]: {full_key_path} | args={args} kwargs={kwargs}")
-
-
-        if method in SERIALIZE_COMMANDS:
-            
-            payload = args[0] if args else kwargs["value"] if 'value' in kwargs else None
-            payload = self._resolve_value(payload)
-
-            if args:
-                args = (serialize(payload), *args[1:])
-            elif 'value' in kwargs:
-                kwargs['value'] = serialize(payload)
-
-        # Inject TTL inline where supported
-        if method == "set" and self.the_ttl is not None:
-            kwargs.setdefault("ex", self.the_ttl)
-        
-        if method == "restore":
-            ttl_ms = (self.the_ttl or 0) * 1000
-            result = await redis_method(full_key_path, ttl_ms, *args, **kwargs)
-
-            # Also apply TTL again if needed (usually redundant with ttl_ms but keep it if needed)
-            if self.the_ttl:
-                await self._parent._redis.expire(self._name, self.the_ttl)
-
-            return result  # ✅ Early return here
-
-        if method == 'get' and self.is_password:
-            Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
-
-        
-
-        result = await redis_method(full_key_path, *args, **kwargs)
-
-
-
-        # Apply TTL manually if method doesn't support it inline
-        if method in {"restore"} and self.the_ttl is not None:
-            await self._parent._redis.expire(self._name, self.the_ttl)
-
-        # Handle auto-renew on read if enabled
-        if self.ttl_auto_renew and method in DESERIALIZE_COMMANDS and self.the_ttl is not None:
-            await self._parent._redis.expire(self._name, self.the_ttl)
-
-
-        # Deserialize result for read operations
-        if method in DESERIALIZE_COMMANDS:
-            # Fallback to default if result is None
-            if result is None:
-                return self.default if self.default is not None else None
-            
-            result = deserialize(result)
-
-            if result is None:
-                return result
-            
-            
-            if self.is_secret:
-                try:
-                    ENCRYPTION_KEY = get_encryption_key()
-                    fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
-                    fernet_result =  fernet.decrypt(result.encode()).decode()
-                    return fernet_result
-                except Exception:
-                    return "[decryption-error]"
-
-            # Password hashes should never be returned
-            if self.is_password:
-                if reveal:
-                    return result
-                raise AccessDeniedError("To access secrets, set ALLOW_SECRET_ACCESS=1.")
-        
-        return result
 
     def __set_name__(self, owner, name: str):
         self._name = name
@@ -294,7 +343,7 @@ class Key(KeyArgumentPassing):
     
     def __get__(self, instance, owner):
         if instance is None:
-            return self  # Accessed on the class, return the descriptor itself
+            return self
 
         bound_key = self._copy()
         bound_key._parent = instance
@@ -313,25 +362,6 @@ class Key(KeyArgumentPassing):
         new._name = getattr(self, '_name', None)
         return new
 
-    
-    
-    @classmethod
-    def _generate_methods(cls):
-        """
-        Dynamically generate all supported Redis methods for this key class.
-        Each generated method will automatically invoke `_dispatch_method`.
-        """
-        supported_methods = default_methods
-        # print(f"KEY_TYPE: {key_type}")
-        # pprint(supported_methods)
-
-        for method in supported_methods:
-            def make_wrapper(method_name):
-                def method_wrapper(self, *args, **kwargs):
-                    return self._dispatch_method(method_name, *args, **kwargs)
-                return method_wrapper
-            setattr(cls, method, make_wrapper(method))
-    
     
     def describe(self):
         """Returns key description as dict (name, prefix, params, key, ttl)"""

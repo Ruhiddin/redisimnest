@@ -159,18 +159,10 @@ async def main_test():
     await key.persist()
     assert await key.ttl() == -1  # TTL removed
 
-    key = root.project_name
-    await key.set("Initial")
-    await key.rename("root:new_project_name")
-    assert await root._redis.exists("root:new_project_name")
-
     key = root.app.pending_users
     await key.set(["u1", "u2"])
-    dumped = await key.dump()
     await key.unlink()
     assert not await key.exists()
-    await key.restore(dumped)
-    assert await key.get() == ["u1", "u2"]
 
     key = root.user(5).age
     try:

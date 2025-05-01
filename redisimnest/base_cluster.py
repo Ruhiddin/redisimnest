@@ -111,7 +111,7 @@ class BaseCluster:
         __prefix__ (str): The prefix string applied to all keys within the cluster.
         __ttl__ (int or None): Default TTL (in seconds) applied to keys, or `None` for no expiration.
         ENABLE_CACHING (bool): Whether caching of computed prefixes is enabled (default is `True`).
-        _redis (Any): Redis client used to interact with the Redis server.
+        redis (Any): Redis client used to interact with the Redis server.
         _inherited_params (dict): Parameters inherited from the parent cluster.
         _parent (BaseCluster or None): The parent cluster, if this cluster is a subcluster.
 
@@ -160,7 +160,7 @@ class BaseCluster:
         # self._collect_runtime_structure()
 
         self.__doc__ = get_pretty_representation(self.describe())
-        self._redis = redis_client or getattr(_parent, "_redis", None)
+        self.redis = redis_client or getattr(_parent, "redis", None)
 
     def _apply_validators(self):
         validators = getattr(self.__class__, "__validators__", {})
@@ -321,14 +321,14 @@ class BaseCluster:
         """
 
         cluster_prefix = self.get_full_prefix() + '*'
-        keys = await scan_keys(self._redis, cluster_prefix)
+        keys = await scan_keys(self.redis, cluster_prefix)
         
         if not keys:
             return
         chunks = []
         for i in range(0, len(keys), REDIS_DELETE_CHUNK_SIZE):
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
-            result = await self._redis.delete(*chunk)
+            result = await self.redis.delete(*chunk)
             chunks.append(f"[redisimnest] CLEAR → Cluster: {self.__class__.__name__} | chunk: {i+1} | deleted: {result} | keys: {chunk}")
 
         if SHOW_METHOD_DISPATCH_LOGS:
@@ -348,7 +348,7 @@ class BaseCluster:
                     Returns an empty list if no matching keys are found.
         """
         cluster_prefix = self.get_full_prefix() + '*'
-        keys = await scan_keys(self._redis, cluster_prefix)
+        keys = await scan_keys(self.redis, cluster_prefix)
         
         return keys or []
 

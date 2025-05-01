@@ -1,23 +1,38 @@
-# List of default methods
-default_methods = [
-    "set", "__setitem__", "get", "__getitem__", "dump", "exists",
-    "expire", "pexpire", "expireat", "pexpireat", "persist",
-    "ttl", "pttl", "expiretime", "object", "type", "memory_usage",
-    "touch", "unlink", "rename", "renamenx", "restore", "lock"
-]
-
-RAW_COMMANDS = {
-    "ttl", "pttl", "expiretime", "exists", "type", "memory_usage",
-    "touch", "unlink", "expire", "pexpire", "expireat", "pexpireat", 
-    "persist", "rename", "renamenx", "lock", "object"
-}
+import functools
+from ..settings import SHOW_METHOD_DISPATCH_LOGS
 
 
-SERIALIZE_COMMANDS = {
-    "set", "__setitem__"
-}
+def with_logging(method):
+    """
+    Decorator to log Redis method dispatches and their results
+    when SHOW_METHOD_DISPATCH_LOGS is enabled.
 
-# Deserializing commands (methods that read data from a key)
-DESERIALIZE_COMMANDS = {
-    "get", "__getitem__"
-}
+    Requires the decorated method to be a method of an object with:
+        - self.key: the full Redis key path
+        - self.is_secret / self.is_password: booleans for key sensitivity
+    """
+    method_name = method.__name__
+
+    @functools.wraps(method)
+    async def wrapper(self, *args, **kwargs):
+        if SHOW_METHOD_DISPATCH_LOGS:
+            key_status = (
+                'secret' if getattr(self, 'is_secret', False)
+                else 'password' if getattr(self, 'is_password', False)
+                else 'plainkey'
+            )
+            key = getattr(self, 'key', 'UNKNOWN_KEY')
+            print(
+                f"[redisimnest] {method_name.upper():<8} → [{key_status}]: {key} | args={args} kwargs={kwargs}"
+            )
+
+        result = await method(self, *args, **kwargs)
+
+        if SHOW_METHOD_DISPATCH_LOGS:
+            print(
+                f"[redisimnest] {method_name.upper():<8} ← Result: {repr(result)}"
+            )
+
+        return result
+
+    return wrapper

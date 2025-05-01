@@ -19,7 +19,7 @@ class BaseCluster:
         __prefix__ (str): The prefix string applied to all keys within the cluster.
         __ttl__ (int or None): Default TTL (in seconds) applied to keys, or `None` for no expiration.
         ENABLE_CACHING (bool): Whether caching of computed prefixes is enabled (default is `True`).
-        _redis (Any): Redis client used to interact with the Redis server.
+        redis (Any): Redis client used to interact with the Redis server.
         _inherited_params (dict): Parameters inherited from the parent cluster.
         _parent (BaseCluster or None): The parent cluster, if this cluster is a subcluster.
 
