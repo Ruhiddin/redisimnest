@@ -7,10 +7,10 @@ REDIS_USERNAME = os.getenv("REDIS_USERNAME")
 REDIS_PASS = os.getenv("REDIS_PASS")
 
 # Custom settings for the package
-REDIS_DELETE_CHUNK_SIZE = 50
-ENFORCE_PREFIX_START_WITH_PLACEHOLDER = True  # Default to True
-TTL_AUTO_RENEW = False  # Default to False
-SHOW_METHOD_DISPATCH_LOGS = True  # Default to False
+REDIS_DELETE_CHUNK_SIZE: int = 50
+ENFORCE_PREFIX_START_WITH_PLACEHOLDER: bool = True  # Default to True
+TTL_AUTO_RENEW: bool = False  # Default to False
+SHOW_METHOD_DISPATCH_LOGS: bool = True  # Default to False
 
 # Optionally load additional settings from a user-defined file
 USER_SETTINGS_FILE = os.getenv("USER_SETTINGS_FILE")

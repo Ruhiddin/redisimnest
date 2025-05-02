@@ -73,22 +73,14 @@ class RedisMethodMixin:
         """Get the value of a key, with decryption and auto-TTL renewal if applicable."""
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
-        get = self._parent.redis.get
         key = self.key
         the_ttl = self.the_ttl
 
-        raw = await get(key)
-        plain_raw = await self.raw()
-
-        print(f"{raw=} {plain_raw=}")
-        assert raw == plain_raw, "Result mismatch for raw() and get()"
-
+        raw = await self._parent.redis.get(key)
         result = copy.deepcopy(raw)
-        del raw, get
 
         if result is None:
             if self.default_value is not None:
-                print(f"{self.default_value=} (deepcopied and returned)")
                 return copy.deepcopy(self.default_value)
             return None
 
@@ -104,7 +96,6 @@ class RedisMethodMixin:
                 fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
                 result = fernet.decrypt(result.encode()).decode()
             except Exception as e:
-                print(f"[redisimnest] Decryption failed: {e}")
                 return "[decryption-error]"
 
         if self.is_password:

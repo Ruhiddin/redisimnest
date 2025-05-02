@@ -95,22 +95,28 @@ def with_logging(method):
 
 
 
-def format_clear_log_line(cluster_name: str, chunk_index: int, deleted_count: int, keys: list) -> str:
+def format_clear_log_line(
+    cluster_name: str,
+    chunk_num: int,
+    chunks_count: int,
+    deleted: int,
+    deletes_count: int,
+    keys: list
+) -> str:
     """
     Returns a fully colorized CLEAR log line for cluster-wide deletions,
-    using only predeclared color functions.
+    with chunk and deletion counts tracked as x/y.
     """
-    # Reuse color functions
     prefix         = CLR_PACKAGE_NAME("[redisimnest]")
     method         = CLR_METHOD_CLEAR("CLEAR")
-    arrow          = CLR_METHOD_CLEAR("→")  # arrow inherits method color
+    arrow          = CLR_METHOD_CLEAR("→")
     chunk_label    = CLR_ARGS_KWARGS("chunk:")
     deleted_label  = CLR_ARGS_KWARGS("deleted:")
     keys_label     = CLR_ARGS_KWARGS("keys:")
 
-    cluster_type    = CLR_METHOD_DELETE("[cluster]")  # class name often contains security-sensitive context
-    chunk_val      = CLR_RESULT_TEXT(str(chunk_index))
-    deleted_val    = CLR_RESULT_TEXT(str(deleted_count))
+    cluster_type   = CLR_METHOD_DELETE("[cluster]")
+    chunk_val      = CLR_RESULT_TEXT(f"{chunk_num}/{chunks_count}")
+    deleted_val    = CLR_RESULT_TEXT(f"{deleted}/{deletes_count}")
     keys_val       = repr(keys)
 
     cluster_name = CLR_KEY_NAME(cluster_name)

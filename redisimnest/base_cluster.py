@@ -321,24 +321,42 @@ class BaseCluster:
         #### Returns:
             None
         """
-
         cluster_prefix = self.get_full_prefix() + '*'
         keys = await scan_keys(self.redis, cluster_prefix)
-        
+
+        total_keys = len(keys)
+        chunks_count = (total_keys + REDIS_DELETE_CHUNK_SIZE - 1) // REDIS_DELETE_CHUNK_SIZE
+        total_deleted = 0
         chunks = []
-        for i in range(0, len(keys), REDIS_DELETE_CHUNK_SIZE):
+
+        for chunk_num, i in enumerate(range(0, total_keys, REDIS_DELETE_CHUNK_SIZE), start=1):
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
-            result = await self.redis.delete(*chunk)
-            colored = format_clear_log_line(self.__class__.__name__, i+1, result, chunk)
+            deleted = await self.redis.delete(*chunk)
+            total_deleted += deleted
+            colored = format_clear_log_line(
+                cluster_name=self.__class__.__name__,
+                chunk_num=chunk_num,
+                chunks_count=chunks_count,
+                deleted=deleted,
+                deletes_count=total_deleted,
+                keys=chunk,
+            )
             chunks.append(colored)
 
         if not chunks:
-            colored = format_clear_log_line(self.__class__.__name__, 0, 0, [])
+            colored = format_clear_log_line(
+                cluster_name=self.__class__.__name__,
+                chunk_num=0,
+                chunks_count=0,
+                deleted=0,
+                deletes_count=0,
+                keys=[],
+            )
             chunks.append(colored)
-        
+
         if SHOW_METHOD_DISPATCH_LOGS:
             print('\n'.join(chunks))
-            
+        
         return True
     
     async def subkeys(self) -> None:
