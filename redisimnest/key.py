@@ -9,7 +9,7 @@ from .utils.logging import with_logging
 from .utils.misc import get_encryption_key, get_pretty_representation, lazy_import
 from .utils.prefix import validate_prefix
 from .settings import TTL_AUTO_RENEW
-
+import copy
 
 
 
@@ -75,8 +75,9 @@ class RedisMethodMixin:
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
         get = self._parent.redis.get
-        result = await get(self.key, *args, **kwargs)
 
+        result = await get(self.key, *args, **kwargs)
+        result = copy.deepcopy(result)
         if result is None:
             if self.default is not None:
                 return self.default
@@ -218,10 +219,6 @@ class Key(KeyArgumentPassing, RedisMethodMixin):
             )
         self.is_secret = is_secret
         self.is_password = is_password
-
-    def __new__(cls, *args, **kwargs):
-        instance = super().__new__(cls)
-        return instance
 
     def _resolve_ttl(self):
         # Key-level TTL
