@@ -325,8 +325,6 @@ class BaseCluster:
         cluster_prefix = self.get_full_prefix() + '*'
         keys = await scan_keys(self.redis, cluster_prefix)
         
-        if not keys:
-            return
         chunks = []
         for i in range(0, len(keys), REDIS_DELETE_CHUNK_SIZE):
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
