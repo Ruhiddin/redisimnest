@@ -88,9 +88,10 @@ class RedisMethodMixin:
 
         if result is None:
             if self.default_value is not None:
-                print(f"{self.default_value=} (is being returned)")
-                return self.default_value
+                print(f"{self.default_value=} (deepcopied and returned)")
+                return copy.deepcopy(self.default_value)
             return None
+
 
         result = deserialize(result)
 
@@ -215,7 +216,7 @@ class Key(KeyArgumentPassing, RedisMethodMixin):
         is_password: bool = False
     ):
         self.prefix_template = prefix_template
-        self.default_value = default_value
+        self.default_value = copy.deepcopy(default_value)
         self._own_ttl = ttl  # Changed from self.ttl
         self._placeholder_keys = re.findall(r"\{(.*?)\}", prefix_template) if prefix_template else []
         self.ttl_auto_renew = ttl_auto_renew
