@@ -69,13 +69,16 @@ class RedisMethodMixin:
 
 
     @with_logging
-    async def get(self, reveal: bool = False, *args, **kwargs) -> Union[Awaitable[Any], Any]:
+    async def get(self, reveal: bool = False) -> Union[Awaitable[Any], Any]:
         """Get the value of a key, with decryption and auto-TTL renewal if applicable."""
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
         get = self._parent.redis.get
 
         raw = await get(self.key)
+        plain_raw = await self.raw()
+
+        assert raw == plain_raw, "Result mismatch for raw() and get()"
 
         result = copy.deepcopy(raw)
         del raw, get
