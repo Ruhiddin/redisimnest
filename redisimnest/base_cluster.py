@@ -334,6 +334,10 @@ class BaseCluster:
             colored = format_clear_log_line(self.__class__.__name__, i+1, result, chunk)
             chunks.append(colored)
 
+        if not chunks:
+            colored = format_clear_log_line(self.__class__.__name__, 0, 0, [])
+            chunks.append(colored)
+        
         if SHOW_METHOD_DISPATCH_LOGS:
             print('\n'.join(chunks))
             
