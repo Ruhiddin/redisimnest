@@ -88,6 +88,7 @@ class RedisMethodMixin:
 
         if result is None:
             if self.default_value is not None:
+                print(f"{self.default_value=} (is being returned)")
                 return self.default_value
             return None
 
