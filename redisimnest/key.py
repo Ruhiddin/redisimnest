@@ -19,28 +19,30 @@ from .settings import TTL_AUTO_RENEW
 # ==============             KEY ARGUMENT PASSING             ==============#
 # ====================================================================================================
 class KeyArgumentPassing:
-    """Handles single and multi param passing to format prefix"""
+    """Handles single and multi param passing to format prefix."""
 
     def __call__(self, *args, **kwargs):
-        """Support positional arguments"""
+        """Support positional and keyword arguments to bind parameters."""
+        # Combine positional arguments into kwargs using placeholder keys
         for key, arg in zip(self._placeholder_keys, args):
             if key not in kwargs:
                 kwargs[key] = arg
 
-        # Validate all placeholders provided
+        # Validate all placeholders are present
         missing = [k for k in self._placeholder_keys if k not in kwargs]
         if missing:
             raise MissingParameterError(
                 f"Missing required param(s) {missing} for key prefix '{self.prefix_template}'"
             )
 
-        self._resolved_args = kwargs  # <-- Store the args
-        return self
-
-
+        # Create a new bound key instance
+        bound_key = self._copy()
+        bound_key._resolved_args = kwargs
+        bound_key._parent = getattr(self, "_parent", None)  # Preserve parent if present
+        return bound_key
 
     def __getitem__(self, value):
-        """Support single argument"""
+        """Support shorthand syntax for single-parameter keys."""
         if len(self._placeholder_keys) != 1:
             raise ValueError(
                 f"Key with multiple placeholders ({', '.join(self._placeholder_keys)}) "
