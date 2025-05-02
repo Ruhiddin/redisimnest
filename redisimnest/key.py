@@ -74,10 +74,13 @@ class RedisMethodMixin:
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
         get = self._parent.redis.get
+        key = self.key
+        the_ttl = self.the_ttl
 
-        raw = await get(self.key)
+        raw = await get(key)
         plain_raw = await self.raw()
 
+        print(f"{raw=} {plain_raw=}")
         assert raw == plain_raw, "Result mismatch for raw() and get()"
 
         result = copy.deepcopy(raw)
@@ -107,9 +110,9 @@ class RedisMethodMixin:
                 return result
             raise AccessDeniedError("To access secrets, set ALLOW_SECRET_ACCESS=1.")
 
-        if self.ttl_auto_renew and self.the_ttl is not None:
-            await self._parent.redis.expire(self.key, self.the_ttl)
-
+        if self.ttl_auto_renew and the_ttl is not None:
+            await self._parent.redis.expire(key, the_ttl)
+        print(f'{result=}')
         return result
 
     
