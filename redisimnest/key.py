@@ -72,8 +72,8 @@ class RedisMethodMixin:
         """Get the value of a key, with decryption and auto-TTL renewal if applicable."""
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
-
-        result = await self._parent.redis.get(self.key, *args, **kwargs)
+        get = self._parent.redis.get
+        result = await get(self.key, *args, **kwargs)
 
         if result is None:
             if self.default is not None:
