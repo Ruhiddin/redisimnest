@@ -76,8 +76,10 @@ class RedisMethodMixin:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
         get = self._parent.redis.get
 
-        result = await get(self.key, *args, **kwargs)
-        result = copy.deepcopy(result)
+        raw = await get(self.key, *args, **kwargs)
+        result = copy.deepcopy(raw)
+        del raw
+        
         if result is None:
             if self.default is not None:
                 return self.default
