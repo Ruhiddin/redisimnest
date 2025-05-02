@@ -1,6 +1,6 @@
 [project]
 name = "redisimnest"
-version = "0.7.10"
+version = "0.7.11"
 description = "(Redis Imaginary Nesting) brings poetic structure to Redis with elegant, nestable clusters—turning your keyspace into a meaningful, typed, and navigable hierarchy."
 authors = [{name="Ruhiddin Turdaliyev", email="niddihur@gmail.com"}]
 license = {text = "MIT"}
