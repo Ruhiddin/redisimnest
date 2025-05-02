@@ -11,9 +11,10 @@ def CLR_METHOD_GET(text): return colored(text, 'green', attrs=['bold'])
 def CLR_METHOD_SET(text): return colored(text, 'blue', attrs=['bold'])
 def CLR_METHOD_DELETE(text): return colored(text, 'red', attrs=['bold'])
 def CLR_METHOD_CLEAR(text): return colored(text, 'red', attrs=['bold'])
-def CLR_METHOD_OHTER(text): return colored(text, 'white', attrs=['bold'])
+def CLR_KEY_NAME(text): return colored(text, 'light_cyan', 'on_black')
 
 # Key type identity
+def CLR_METHOD_OHTER(text): return colored(text, 'white', attrs=['bold'])
 def CLR_KEY_TYPE_PLAINKEY(text): return colored(text, 'grey')
 def CLR_KEY_TYPE_PASSWORD(text): return colored(text, 'magenta', attrs=['bold'])
 def CLR_KEY_TYPE_SECRET(text): return colored(text, 'yellow', attrs=['bold'])
@@ -21,7 +22,7 @@ def CLR_KEY_TYPE_SECRET(text): return colored(text, 'yellow', attrs=['bold'])
 # Supporting info
 def CLR_ARGS_KWARGS(text): return colored(text, 'dark_grey')
 def CLR_RESULT_TEXT(text): return colored(text, 'green')
-def CLR_RESULT_VALUE(text): return colored(text, 'grey')
+def CLR_RESULT_VALUE(text): return colored(text, 'grey', attrs=[])
 
 
 def CLR_TIMESTAMP(text): return colored(text, 'grey')
@@ -74,7 +75,8 @@ def with_logging(method):
             colored_key = colored(key, 'white')  # literal key always bright
             colored_args = CLR_ARGS_KWARGS(f"args={args} kwargs={kwargs}")
 
-            print(f"{colored_prefix} {get_now()} {colored_method} {colored_arrow} {colored_key_status}: {colored_key} | {colored_args}")
+            key_name = CLR_KEY_NAME(self._name)
+            print(f"{colored_prefix} {get_now()} {colored_method} {colored_arrow} {colored_key_status} {key_name}: {colored_key} | {colored_args}")
 
         result = await method(self, *args, **kwargs)
 
@@ -110,5 +112,7 @@ def format_clear_log_line(cluster_name: str, chunk_index: int, deleted_count: in
     chunk_val      = CLR_RESULT_TEXT(str(chunk_index))
     deleted_val    = CLR_RESULT_TEXT(str(deleted_count))
     keys_val       = repr(keys)
+
+    cluster_name = CLR_KEY_NAME(cluster_name)
 
     return f"{prefix} {get_now()} {method}  {arrow} {cluster_type}  {cluster_name} | {chunk_label} {chunk_val} | {deleted_label} {deleted_val} | {keys_label} {keys_val}"
