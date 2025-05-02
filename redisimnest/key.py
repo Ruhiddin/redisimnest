@@ -59,13 +59,13 @@ class RedisMethodMixin:
     @with_logging
     async def set(self, value, ex=None, px=None, nx=False, xx=False, keepttl=False, get=False, exat=None, pxat=None) -> Union[Awaitable[Any], Any]:
         """Set the value of a key."""
-        value = self._resolve_value(value)
-        value = serialize(value)
+        val = self._resolve_value(value)
+        val = serialize(val)
         
         if self.the_ttl is not None:
             ex = ex or self.the_ttl
         
-        return await self._parent.redis.set(self.key, value, ex, px, nx, xx, keepttl, get, exat, pxat)
+        return await self._parent.redis.set(self.key, val, ex, px, nx, xx, keepttl, get, exat, pxat)
 
 
     @with_logging
@@ -78,7 +78,7 @@ class RedisMethodMixin:
         raw = await get(self.key, *args, **kwargs)
 
         result = copy.deepcopy(raw)
-        del raw
+        del raw, get
 
         if result is None:
             if self.default is not None:
