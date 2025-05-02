@@ -1,7 +1,6 @@
 import json
 from typing import Any, Awaitable, Optional, Union
 import re
-
 from .exceptions import AccessDeniedError, MissingParameterError
 
 from .utils.de_serialization import SERIALIZED_TYPE_MAP, deserialize, serialize
@@ -77,9 +76,10 @@ class RedisMethodMixin:
         get = self._parent.redis.get
 
         raw = await get(self.key, *args, **kwargs)
+
         result = copy.deepcopy(raw)
         del raw
-        
+
         if result is None:
             if self.default is not None:
                 return self.default
@@ -339,8 +339,8 @@ class Key(KeyArgumentPassing, RedisMethodMixin):
 
     
     def __get__(self, instance, owner):
-        if instance is None:
-            return self
+        # if instance is None:
+        #     return self
 
         bound_key = self._copy()
         bound_key._parent = instance
