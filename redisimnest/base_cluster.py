@@ -2,6 +2,8 @@ import inspect
 import re
 from typing import Any, Dict
 
+from .utils.logging import format_clear_log_line
+
 from .exceptions import MissingParameterError, ParameterValidationError
 
 from .settings import REDIS_DELETE_CHUNK_SIZE, SHOW_METHOD_DISPATCH_LOGS
@@ -329,7 +331,8 @@ class BaseCluster:
         for i in range(0, len(keys), REDIS_DELETE_CHUNK_SIZE):
             chunk = keys[i:i + REDIS_DELETE_CHUNK_SIZE]
             result = await self.redis.delete(*chunk)
-            chunks.append(f"[redisimnest] CLEAR → Cluster: {self.__class__.__name__} | chunk: {i+1} | deleted: {result} | keys: {chunk}")
+            colored = format_clear_log_line(self.__class__.__name__, i+1, result, chunk)
+            chunks.append(colored)
 
         if SHOW_METHOD_DISPATCH_LOGS:
             print('\n'.join(chunks))

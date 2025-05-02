@@ -5,10 +5,10 @@ import re
 from .exceptions import AccessDeniedError, MissingParameterError
 
 from .utils.de_serialization import SERIALIZED_TYPE_MAP, deserialize, serialize
-from .utils.method_maps import with_logging
+from .utils.logging import with_logging
 from .utils.misc import get_encryption_key, get_pretty_representation, lazy_import
 from .utils.prefix import validate_prefix
-from .settings import TTL_AUTO_RENEW, SHOW_METHOD_DISPATCH_LOGS
+from .settings import TTL_AUTO_RENEW
 
 
 
@@ -55,7 +55,6 @@ class KeyArgumentPassing:
 # ==============             METHODS             ==============#
 # ====================================================================================================
 class RedisMethodMixin:
-
     @with_logging
     async def set(self, value, ex=None, px=None, nx=False, xx=False, keepttl=False, get=False, exat=None, pxat=None) -> Union[Awaitable[Any], Any]:
         """Set the value of a key."""
@@ -69,46 +68,43 @@ class RedisMethodMixin:
 
 
     @with_logging
-    async def get(self, reveal: bool=False, *args, **kwargs) -> Union[Awaitable[Any], Any]:
-        """Get the value of a key."""
+    async def get(self, reveal: bool = False, *args, **kwargs) -> Union[Awaitable[Any], Any]:
+        """Get the value of a key, with decryption and auto-TTL renewal if applicable."""
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
 
         result = await self._parent.redis.get(self.key, *args, **kwargs)
 
-
-        # Fallback to default if result is None
         if result is None:
-            return self.default if self.default is not None else None
-        
+            if self.default is not None:
+                return self.default
+            return None
+
         result = deserialize(result)
 
-
         if result is None:
-            return result
-        
-        
+            return None
+
         if self.is_secret:
             try:
                 ENCRYPTION_KEY = get_encryption_key()
                 fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
-                fernet_result =  fernet.decrypt(result.encode()).decode()
-                return fernet_result
-            except Exception:
+                result = fernet.decrypt(result.encode()).decode()
+            except Exception as e:
+                print(f"[redisimnest] Decryption failed: {e}")
                 return "[decryption-error]"
 
-        # Password hashes should never be returned
         if self.is_password:
             if reveal:
                 return result
             raise AccessDeniedError("To access secrets, set ALLOW_SECRET_ACCESS=1.")
 
-        # Handle auto-renew on read if enabled
         if self.ttl_auto_renew and self.the_ttl is not None:
-            await self._parent.redis.expire(self._name, self.the_ttl)
+            await self._parent.redis.expire(self.key, self.the_ttl)
 
         return result
-        
+
+    
     @with_logging
     async def exists(self) -> Union[Awaitable, Any]:
         """Check if a key exists."""
