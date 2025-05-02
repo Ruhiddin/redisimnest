@@ -69,7 +69,7 @@ class RedisMethodMixin:
 
 
     @with_logging
-    async def get(self, reveal: bool = False) -> Union[Awaitable[Any], Any]:
+    async def get_(self, reveal: bool = False) -> Union[Awaitable[Any], Any]:
         """Get the value of a key, with decryption and auto-TTL renewal if applicable."""
         if self.is_password:
             Warning("Passwords cannot be accessed directly. Use `verify_password` instead.")
