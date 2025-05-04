@@ -105,7 +105,6 @@ class RedisMethodMixin:
 
         if self.ttl_auto_renew and the_ttl is not None:
             await self._parent.redis.expire(key, the_ttl)
-        print(f'{result=}')
         return result
 
     

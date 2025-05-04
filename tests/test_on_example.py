@@ -403,6 +403,142 @@ async def secret_password_test():
     assert await age.get() == 0
 
 
+    # ==============______CHECK STALE DATA______=========================================================================================== CHECK STALE DATA  
+    await root.user(123).age.set(25)
+    data = await root.user(123).age.get()
+    assert data == 25
+
+    id_1 = id(data)
+
+    non_existing_data = await root.user(321).age.get()
+    assert non_existing_data == 0
+
+    await root.user(321).age.set(52)
+    data = await root.user(321).age.get()
+    assert data == 52
+
+    id_2 = id(data)
+
+    assert id_1 != id_2
+
+
+
+
+    await root.clear()
+    await root.user(123).age.set(123)
+    data = await root.user(123).age.get()
+    await root.user(123).clear()
+    data = await root.user(123).age.get()
+
+    assert data == 0
+
+
+
+    await root.clear()
+    await root.user(123).age.set(123)
+    data = await root.user(123).age.get()
+    await root.user(123).age.set(321)
+    data = await root.user(123).age.get()
+
+    assert data == 321
+
+    
+
+
+
+    await root.clear()
+    user = root.user(123)
+    age = user.age
+
+    await age.set(123)
+    data = await age.get()
+    await user.clear()
+    data = await age.get()
+
+    assert data == 0
+
+    user = root.user(321)
+    age = user.age
+
+    assert await age.get() == 0
+
+
+
+
+
+
+async def against_complex_data_structures():
+    await root.clear()
+    date = datetime.now()
+    uuid = UUID("12345678-1234-5678-1234-567812345678")
+    cd = root.admin(123).messages.complex_data
+    complex_data = {'id': 1, 'date': date, 'uuid': uuid, 'list': [date, uuid, {'date': date, 'uuid': uuid}]}
+
+    await cd.set(complex_data)
+    complex_data_2 = await cd.get()
+
+    assert complex_data == complex_data_2
+
+
+
+
+    await root.clear()
+    now = datetime.now()
+    uid = UUID("87654321-4321-6789-4321-678987654321")
+    cd = root.admin(123).messages.complex_data
+
+    nested_data = {
+        "user_id": 42,
+        "timestamps": [now, {"login": now, "actions": [now, now]}],
+        "identifiers": {
+            "primary": uid,
+            "history": [uid, {"archived": uid}],
+        },
+        "attributes": {"active": True, "level": 3.5},
+    }
+
+    await cd.set(nested_data)
+    assert await cd.get() == nested_data
+
+
+    await root.clear()
+    d1 = datetime(2020, 1, 1, 12, 0)
+    d2 = datetime(2021, 1, 1, 12, 0)
+    u1 = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    u2 = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    cd = root.admin(123).messages.complex_data
+
+    historical = {
+        "events": [
+            {"timestamp": d1, "id": u1},
+            {"timestamp": d2, "id": u2}
+        ],
+        "meta": {
+            "created": d1,
+            "checked_by": [u1, u2],
+            "flags": [True, False, True]
+        }
+    }
+
+    await cd.set(historical)
+    assert await cd.get() == historical
+
+
+    await root.clear()
+    cd = root.admin(123).messages.complex_data
+    config = {
+        "uuid_key": UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+        "datetime_key": datetime(2030, 12, 31, 23, 59, 59),
+        "nested": {
+            "list": [
+                {"inner_uuid": UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")},
+                {"inner_datetime": datetime(2040, 1, 1, 0, 0, 0)}
+            ]
+        }
+    }
+
+    await cd.set(config)
+    assert await cd.get() == config
 
 
 
@@ -411,6 +547,7 @@ class TestHandlers:
         async def run_subtests():
             await main_test()
             await secret_password_test()
+            await against_complex_data_structures()
         run(run_subtests())
     
 

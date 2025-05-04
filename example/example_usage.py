@@ -325,6 +325,80 @@ async def secret_password_test():
 
 
 
+async def test_against_complex_data_structures():
+    await root.clear()
+    date = datetime.now()
+    uuid = UUID("12345678-1234-5678-1234-567812345678")
+    cd = root.admin(123).messages.complex_data
+    complex_data = {'id': 1, 'date': date, 'uuid': uuid, 'list': [date, uuid, {'date': date, 'uuid': uuid}]}
+
+    await cd.set(complex_data)
+    complex_data_2 = await cd.get()
+
+    assert complex_data == complex_data_2
+
+
+
+
+    await root.clear()
+    now = datetime.utcnow()
+    uid = UUID("87654321-4321-6789-4321-678987654321")
+    cd = root.admin(123).messages.complex_data
+
+    nested_data = {
+        "user_id": 42,
+        "timestamps": [now, {"login": now, "actions": [now, now]}],
+        "identifiers": {
+            "primary": uid,
+            "history": [uid, {"archived": uid}],
+        },
+        "attributes": {"active": True, "level": 3.5},
+    }
+
+    await cd.set(nested_data)
+    assert await cd.get() == nested_data
+
+
+    await root.clear()
+    d1 = datetime(2020, 1, 1, 12, 0)
+    d2 = datetime(2021, 1, 1, 12, 0)
+    u1 = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    u2 = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    cd = root.admin(123).messages.complex_data
+
+    historical = {
+        "events": [
+            {"timestamp": d1, "id": u1},
+            {"timestamp": d2, "id": u2}
+        ],
+        "meta": {
+            "created": d1,
+            "checked_by": [u1, u2],
+            "flags": [True, False, True]
+        }
+    }
+
+    await cd.set(historical)
+    assert await cd.get() == historical
+
+
+    await root.clear()
+    cd = root.admin(123).messages.complex_data
+    config = {
+        "uuid_key": UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+        "datetime_key": datetime(2030, 12, 31, 23, 59, 59),
+        "nested": {
+            "list": [
+                {"inner_uuid": UUID("dddddddd-dddd-dddd-dddd-dddddddddddd")},
+                {"inner_datetime": datetime(2040, 1, 1, 0, 0, 0)}
+            ]
+        }
+    }
+
+    await cd.set(config)
+    assert await cd.get() == config
+
+
 
 
 
@@ -336,6 +410,7 @@ async def secret_password_test():
 async def main_test():
     await main_functionality_test()
     await secret_password_test()
+    await test_against_complex_data_structures()
 
 
 run(main_test())

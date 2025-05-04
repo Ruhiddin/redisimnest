@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from uuid import UUID
 from typing import Any, Union
+import uuid
 
 
 
@@ -18,6 +19,44 @@ SERIALIZED_TYPE_MAP = {
     "none": None
 }
 """Mapping of string type identifiers to corresponding Python types for supported serializations."""
+
+
+def _serialize(v):
+        if isinstance(v, (str, int, float, bool)):
+            return v
+        elif isinstance(v, datetime):
+            return {"__type__": "datetime", "value": v.isoformat()}
+        elif isinstance(v, uuid.UUID):
+            return {"__type__": "uuid", "value": str(v)}
+        elif v is None:
+            return {"__type__": "none", "value": None}
+        elif isinstance(v, dict):
+            return {k: _serialize(val) for k, val in v.items()}
+        elif isinstance(v, (list, tuple)):
+            return [_serialize(i) for i in v]
+        else:
+            raise TypeError(f"Unsupported type: {type(v)}")
+        
+
+def _deserialize(v):
+        if isinstance(v, dict):
+            if "__type__" in v:
+                t = v["__type__"]
+                val = v.get("value")
+                if t == "datetime":
+                    return datetime.fromisoformat(val)
+                elif t == "uuid":
+                    return uuid.UUID(val)
+                elif t == "none":
+                    return None
+                else:
+                    raise TypeError(f"Unsupported __type__: {t}")
+            return {k: _deserialize(val) for k, val in v.items()}
+        elif isinstance(v, list):
+            return [_deserialize(i) for i in v]
+        else:
+            return v
+
 
 
 def serialize(value: Any, with_type: bool = False, with_type_str: bool = False) -> Union[bytes, tuple[Any, bytes]]:
@@ -45,13 +84,13 @@ def serialize(value: Any, with_type: bool = False, with_type_str: bool = False) 
     elif isinstance(value, UUID):
         data = {"__type__": "uuid", "value": str(value)}
     elif isinstance(value, tuple):
-        data = {"__type__": "tuple", "value": list(value)}
+        data = {"__type__": "tuple", "value": list(_serialize(value))}
     elif isinstance(value, bool):
         data = {"__type__": "bool", "value": value}
     elif isinstance(value, (int, float, str)):
         data = {"__type__": type(value).__name__, "value": value}
     elif isinstance(value, (dict, list)):
-        data = {"__type__": type(value).__name__, "value": value}
+        data = {"__type__": type(value).__name__, "value": _serialize(value)}
     elif value is None:
         data = {"__type__": 'none', 'value': 'None'}
     else:
@@ -104,7 +143,7 @@ def deserialize(raw: Union[bytes, str], with_type: bool = False, with_type_str: 
     elif value_type == "uuid":
         result = UUID(value)
     elif value_type == "tuple":
-        result = tuple(value)
+        result = tuple(_deserialize(value))
     elif value_type == "bool":
         result = bool(value)
     elif value_type == "int":
@@ -114,9 +153,9 @@ def deserialize(raw: Union[bytes, str], with_type: bool = False, with_type_str: 
     elif value_type == "str":
         result = str(value)
     elif value_type == "list":
-        result = list(value)
+        result = list(_deserialize(value))
     elif value_type == "dict":
-        result = dict(value)
+        result = dict(_deserialize(value))
     elif value_type == 'none':
         result = None
     else:
@@ -130,3 +169,4 @@ def deserialize(raw: Union[bytes, str], with_type: bool = False, with_type_str: 
         return the_type, result
     else:
         return result
+
