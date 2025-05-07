@@ -25,6 +25,11 @@ def CLR_RESULT_TEXT(text): return colored(text, 'green')
 def CLR_RESULT_VALUE(text): return colored(text, 'grey', attrs=[])
 
 
+def CLR_PIPE_RESULT_VALUE(text): return colored(text, 'green', attrs=['bold'])
+def CLR_PIPE_PIPELINE_TEXT(text): return colored(text, 'cyan', attrs=['bold'])
+def CLR_PIPE_RESULT_GAP(text): return colored(text, 'black', attrs=['concealed'])
+
+
 def CLR_TIMESTAMP(text): return colored(text, 'grey')
 def get_now():
     now = datetime.now()
@@ -32,6 +37,20 @@ def get_now():
     return CLR_TIMESTAMP(formatted)
 
 
+
+
+def method_color_fn(name: str):
+        name = name.upper()
+        return {
+            "GET": CLR_METHOD_GET,
+            "SET": CLR_METHOD_SET,
+            "DELETE": CLR_METHOD_DELETE,
+            "CLEAR": CLR_METHOD_CLEAR,
+        }.get(name, CLR_METHOD_OHTER)
+
+# ====================================================================================================
+# ==============             WITH LOGGING             ==============#
+# ====================================================================================================
 def with_logging(method):
     """
     Decorator to log Redis method dispatches and their results
@@ -42,14 +61,6 @@ def with_logging(method):
         - self.is_secret / self.is_password: booleans for key sensitivity
     """
     method_name = method.__name__.upper()
-
-    def method_color_fn(name):
-        return {
-            "GET": CLR_METHOD_GET,
-            "SET": CLR_METHOD_SET,
-            "DELETE": CLR_METHOD_DELETE,
-            "CLEAR": CLR_METHOD_CLEAR,
-        }.get(name, CLR_METHOD_OHTER)
 
     @functools.wraps(method)
     async def wrapper(self, *args, **kwargs):
@@ -95,6 +106,11 @@ def with_logging(method):
 
 
 
+
+
+# ====================================================================================================
+# ==============             FORMAT CLEAR LOG LINE             ==============#
+# ====================================================================================================
 def format_clear_log_line(
     cluster_name: str,
     chunk_num: int,
@@ -122,3 +138,51 @@ def format_clear_log_line(
     cluster_name = CLR_KEY_NAME(cluster_name)
 
     return f"{prefix} {get_now()} {method}  {arrow} {cluster_type}  {cluster_name} | {chunk_label} {chunk_val} | {deleted_label} {deleted_val} | {keys_label} {keys_val}"
+
+
+
+
+# ====================================================================================================
+# ==============             LOG PIPELINE RESULTS             ==============#
+# ====================================================================================================
+def log_pipeline_results(pipe_id, result_metas, results):
+    if not SHOW_METHOD_DISPATCH_LOGS:
+        return
+
+    prefix = CLR_PACKAGE_NAME("[redisimnest]")
+    pipeline_text = CLR_PIPE_PIPELINE_TEXT('PIPE   ←')
+    pipe_id = CLR_KEY_NAME(f"id: {pipe_id}")
+    heading = f"{prefix} {get_now()} {pipeline_text} {pipe_id}"
+    print(heading)
+
+    for meta, result in zip(result_metas, results):
+        method = meta.get('method', 'UNKNOWN').upper()
+        key_str = meta.get('key', '???')
+        key_type_text = 'secret' if meta.get('is_secret') else 'password' if meta.get('is_password') else 'plainkey'
+
+        key_type = {
+            'secret': CLR_KEY_TYPE_SECRET(key_type_text),
+            'password': CLR_KEY_TYPE_PASSWORD(key_type_text),
+            'plainkey': CLR_KEY_TYPE_PLAINKEY(key_type_text),
+        }[key_type_text]
+
+        method_part = method_color_fn(method)(f"{method:<6}")
+        cld_arrow_right = method_color_fn(method)("→")
+        cld_arrow_left = method_color_fn(method)("←")
+        gap_1 = CLR_PIPE_RESULT_GAP("[redisimnest] [2025-05-07 10:21:44.798] PIPE_OUT →")
+        gap_2 = CLR_PIPE_RESULT_GAP("[redisimnest] [2025-05-07 10:21:44.798] PIPE_OUT → SET   ")
+
+        key_name = CLR_KEY_NAME(meta.get('name', '???'))
+        result_part = CLR_RESULT_VALUE(repr(result))
+        colored_args = CLR_ARGS_KWARGS(f"args={meta.get("args", "???")} kwargs={meta.get("kwargs", "???")}")
+        print(f"{gap_1} {method_part} {cld_arrow_right} {key_type} {key_name} {key_str} {colored_args}")
+        print(f"{gap_2} {cld_arrow_left} {result_part}")
+
+
+
+
+# ====================================================================================================
+# ==============             LOG ERROR             ==============#
+# ====================================================================================================
+def log_error(text: str):
+    print(f"{colored("[redisimnest] Error: ", 'red', attrs=['bold'])} {colored(text, 'red')}")

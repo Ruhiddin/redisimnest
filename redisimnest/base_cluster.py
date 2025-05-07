@@ -375,7 +375,16 @@ class BaseCluster:
         
         return keys or []
 
+    def get_pipeline(self):
+        """
+        Create a redisimnest-aware pipeline instance.
 
+        Returns:
+            Pipeline: A pipeline object that records metadata for each command and supports
+                    deserialization, secret handling, and structured logging upon execution.
+        """
+        from .pipeline import Pipeline
+        return Pipeline(self.redis)
     
     def __repr__(self):
         cls_name = self.__class__.__name__

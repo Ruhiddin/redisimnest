@@ -1,10 +1,10 @@
 import json
 from typing import Any, Awaitable, Optional, Union
 import re
-from .exceptions import AccessDeniedError, MissingParameterError
 
+from .exceptions import AccessDeniedError, DecryptionError, MissingParameterError
 from .utils.de_serialization import SERIALIZED_TYPE_MAP, deserialize, serialize
-from .utils.logging import with_logging
+from .utils.logging import log_error, with_logging
 from .utils.misc import get_encryption_key, get_pretty_representation, lazy_import
 from .utils.prefix import validate_prefix
 from .settings import TTL_AUTO_RENEW
@@ -96,6 +96,7 @@ class RedisMethodMixin:
                 fernet = lazy_import('cryptography').fernet.Fernet(ENCRYPTION_KEY)
                 result = fernet.decrypt(result.encode()).decode()
             except Exception as e:
+                log_error(str(DecryptionError(str(e))))
                 return "[decryption-error]"
 
         if self.is_password:
@@ -111,7 +112,6 @@ class RedisMethodMixin:
     @with_logging
     async def exists(self) -> Union[Awaitable, Any]:
         """Check if a key exists."""
-
         return await self._parent.redis.exists(self.key)
 
     @with_logging
@@ -188,7 +188,9 @@ class RedisMethodMixin:
     @with_logging
     async def delete(self) -> Union[Awaitable, Any]:
         """Deletes the current key itself"""
+
         return await self._parent.redis.delete(self.key)
+
 
 # ============================================================================================================================================
 # ============================================================================================================================================

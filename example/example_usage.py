@@ -1,6 +1,7 @@
 from asyncio import run
 from datetime import datetime
 from uuid import UUID
+import time
 from redisimnest import BaseCluster, Key
 from redisimnest.exceptions import AccessDeniedError
 from redisimnest.utils import RedisManager, serialize, deserialize
@@ -400,8 +401,67 @@ async def test_against_complex_data_structures():
 
 
 
+async def pipeline_support():
+    await root.clear()
 
+    pipe = root.get_pipeline()
 
+    # Prepare keys
+    user = root.user(123)
+    age = user.age
+    f_name = user.fist_name
+    password = user.password
+    sensitive = user.sensitive_data
+    tokens = root.app.tokens
+
+    # Set values
+    pipe.add(age.set, 25)
+    pipe.add(f_name.set, 'Ali')
+    pipe.add(password.set, 'secure_pass')
+    pipe.add(sensitive.set, str({'bank': 'secret'}))
+
+    # Check existence before execution
+    pipe.add(age.exists)
+    pipe.add(f_name.exists)
+    pipe.add(password.exists)
+    pipe.add(tokens.exists)
+
+    # Touch and expire related
+    pipe.add(age.expire, 100)
+    pipe.add(f_name.pexpire, 2000)
+    pipe.add(password.expireat, int(time.time()) + 1000)
+    pipe.add(sensitive.pexpireat, int(time.time() * 1000) + 2000)
+
+    # PTTL, TTL
+    pipe.add(age.pttl)
+    pipe.add(f_name.ttl)
+
+    # Delete one key
+    pipe.add(tokens.set, ['a', 'b', 'c'])
+    pipe.add(tokens.delete)
+
+    # Persist to remove TTL
+    pipe.add(age.persist)
+
+    # Redis meta
+    pipe.add(age.type)
+    pipe.add(password.memory_usage)
+
+    # Read after write
+    pipe.add(age.get)
+    pipe.add(f_name.get)
+    pipe.add(password.get, reveal=True)
+    pipe.add(sensitive.get)
+
+    # Execute the pipeline
+    await pipe.execute()
+
+    # Final checks
+    assert await age.get() == 25
+    assert await f_name.get() == 'Ali'
+    assert await password.get(reveal=True) != 'secure_pass'
+    assert await sensitive.get() == str({'bank': 'secret'})
+    assert await tokens.get() == []
 
 
 
@@ -411,6 +471,7 @@ async def main_test():
     await main_functionality_test()
     await secret_password_test()
     await test_against_complex_data_structures()
+    await pipeline_support()
 
 
 run(main_test())

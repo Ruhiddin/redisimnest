@@ -19,3 +19,10 @@ class MissingDependencyError(ImportError):
 
 class AccessDeniedError(Exception):
     pass
+
+
+class DecryptionError(Exception):
+    pass
+
+class PipelineDesializationError(Exception):
+    pass
