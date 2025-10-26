@@ -174,7 +174,7 @@ def log_pipeline_results(pipe_id, result_metas, results):
 
         key_name = CLR_KEY_NAME(meta.get('name', '???'))
         result_part = CLR_RESULT_VALUE(repr(result))
-        colored_args = CLR_ARGS_KWARGS(f"args={meta.get("args", "???")} kwargs={meta.get("kwargs", "???")}")
+        colored_args = CLR_ARGS_KWARGS(f"args={meta.get('args', '???')} kwargs={meta.get('kwargs', '???')}")
         print(f"{gap_1} {method_part} {cld_arrow_right} {key_type} {key_name} {key_str} {colored_args}")
         print(f"{gap_2} {cld_arrow_left} {result_part}")
 
