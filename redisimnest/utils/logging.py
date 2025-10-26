@@ -185,4 +185,4 @@ def log_pipeline_results(pipe_id, result_metas, results):
 # ==============             LOG ERROR             ==============#
 # ====================================================================================================
 def log_error(text: str):
-    print(f"{colored("[redisimnest] Error: ", 'red', attrs=['bold'])} {colored(text, 'red')}")
+    print(f"{colored('[redisimnest] Error: ', 'red', attrs=['bold'])} {colored(text, 'red')}")
