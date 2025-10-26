@@ -34,6 +34,7 @@ jobs:
 
       - name: Run tests
         env:
+          MY_ENCRYPTION_KEY: l-idRhyv2wJAXxgfAl_cpi3YdYXDCQjkiNwXUGpUCPc=
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
