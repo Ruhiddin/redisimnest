@@ -58,7 +58,7 @@ class Pipeline:
             'method': method_name,
             'key_id': id(key_instance),
             'key': key_instance.key,
-            'default_value': copy.deepcopy(key_instance.default_value),
+            'default': copy.deepcopy(key_instance.default),
             'reveal': reveal,
             'ttl': getattr(key_instance, 'the_ttl', None),
             'name': getattr(key_instance, '_name', "???"),
@@ -132,7 +132,7 @@ class Pipeline:
                 result = copy.deepcopy(result)
 
                 if result is None:
-                    deserialized_results.append(meta.get('default_value'))
+                    deserialized_results.append(meta.get('default'))
                     continue
 
                 result = deserialize(result)

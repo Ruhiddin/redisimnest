@@ -80,8 +80,8 @@ class RedisMethodMixin:
         result = copy.deepcopy(raw)
 
         if result is None:
-            if self.default_value is not None:
-                return copy.deepcopy(self.default_value)
+            if self.default is not None:
+                return copy.deepcopy(self.default)
             return None
 
 
@@ -201,14 +201,14 @@ class Key(KeyArgumentPassing, RedisMethodMixin):
     def __init__(
         self, 
         prefix_template: str, 
-        default_value: Optional[Any] = None,
+        default: Optional[Any] = None,
         ttl: Optional[int] = None,
         ttl_auto_renew: bool = TTL_AUTO_RENEW,
         is_secret: bool = False,
         is_password: bool = False
     ):
         self.prefix_template = prefix_template
-        self.default_value = copy.deepcopy(default_value)
+        self.default = copy.deepcopy(default)
         self._own_ttl = ttl  # Changed from self.ttl
         self._placeholder_keys = re.findall(r"\{(.*?)\}", prefix_template) if prefix_template else []
         self.ttl_auto_renew = ttl_auto_renew
@@ -350,7 +350,7 @@ class Key(KeyArgumentPassing, RedisMethodMixin):
     def _copy(self):
         new = self.__class__(
             prefix_template=self.prefix_template,
-            default_value=self.default_value,
+            default=self.default,
             ttl=self._own_ttl,
             ttl_auto_renew=self.ttl_auto_renew,
             is_secret=self.is_secret,
